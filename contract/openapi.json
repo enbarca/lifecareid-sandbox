@@ -1,0 +1,4512 @@
+{
+  "components": {
+    "schemas": {
+      "AccessRecordRequest": {
+        "description": "Who read what, for which purpose \u2014 the ledgered access event.\n\nTwo ways to name the reader, one preferred (D-AG7):\n\n* ``actor_did`` \u2014 the structured identity of the component that performed the\n  read (a holder's or app's service DID today; an agent's DID once agent\n  identities exist). Preferred, because a DID can be authenticated and\n  aggregated: \"what did this actor do this week\" is answerable from it.\n* ``accessor`` \u2014 the legacy free-text label (``\"node0:agent:weekly-synthesis\"``).\n  Still accepted and still recorded, so existing callers keep working; free text\n  can be neither verified nor grouped, which is why it is the one being replaced.\n\nAt least one must be present. During the transition both are recorded when both\nare sent.\n\n``consent_id`` names the grant the read was made under, when the reader knows\nit: a data source has it from introspection (``consent_id`` on an active\naccess token). Optional, so every existing caller keeps working; when it is\npresent the ledger entry carries it, so an access can be read back to the\ngrant that allowed it (sandbox partner finding, 2026-10-04). It is checked for\nshape only, against the form this service mints; whether such a grant exists\nis not checked, because the ledger records what the caller asserted.",
+        "properties": {
+          "accessor": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accessor"
+          },
+          "actor_did": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Did"
+          },
+          "consent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The grant the read was made under (`urn:lifecare:consent:<32 hex>`), when the reader knows it.",
+            "title": "Consent Id"
+          },
+          "purpose": {
+            "minLength": 1,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "cgm",
+              "daily",
+              "labs",
+              "body_composition",
+              "recovery",
+              "activity",
+              "insights",
+              "told_to_guardian"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did",
+          "scope",
+          "purpose"
+        ],
+        "title": "AccessRecordRequest",
+        "type": "object"
+      },
+      "AdminRevokeRequest": {
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only this client's connections (for example `proforta-android`). Omitted: every native client's.",
+            "title": "Client Id"
+          },
+          "did": {
+            "description": "The member whose native app connections end.",
+            "title": "Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "did"
+        ],
+        "title": "AdminRevokeRequest",
+        "type": "object"
+      },
+      "AdminRevokeResponse": {
+        "properties": {
+          "revoked": {
+            "description": "How many live connections (refresh-token families) were revoked.",
+            "title": "Revoked",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revoked"
+        ],
+        "title": "AdminRevokeResponse",
+        "type": "object"
+      },
+      "AgentManifest": {
+        "additionalProperties": false,
+        "description": "**Defined, not yet registrable.** What an AI client declares about itself\n(healthspannode `docs/personal-agent-and-multiparty-ledger-design.md` \u00a75.1\nD-AG6a; `docs/provider-ehr-context-and-portability-design.md` \u00a76.2, D-PE5).\n\nA manifest is a *declaration*, not a measurement: nothing here is attested by\nthe network, which is exactly why `trust` and the grant sit above it. The\nladder is the ceiling (D-AG6b: T0 resolvable \u2192 T1 vouched \u2192 T2 attested,\ncarried as `trust`, the same three values\n:class:`DelegatedTokenIntrospection` already publishes, so there is one\nspelling of an agent's tier in the contract and not two), the person's grant\nis the floor, and a client can never receive more than the smaller of them.\n\nThe two fields the provider-EHR design adds are `hosting` and `egress_class`,\nand the rule binding them (\u00a713a, the tightening of D-PE5) is the hard\nconstraint written as a validator: **outside the box the node sends\ncategorical envelopes only, and no grant lifts that.** Values leave in one\nway: through the write fence into the EHR, where a clinician relied on them.\nFrom the chart they travel under the provider's own legal basis, with the\nnetwork not in that path.\n\nThere is no registration route. This is published so a holder, a practice\nnode and a client vendor agree on the shape and the refusals before the first\nmanifest exists, exactly as the delegated token shape was published ahead of\nits issuance.",
+        "properties": {
+          "agent_did": {
+            "description": "the client's own DID in the `:agent:` namespace (did:web:<domain>:agent:<id>)",
+            "title": "Agent Did",
+            "type": "string"
+          },
+          "egress_class": {
+            "description": "what the node may send it: nothing, categorical envelopes (bands, flags, narratives with no values), or values. `full` is valid only with `hosting: local`.",
+            "enum": [
+              "none",
+              "categorical",
+              "full"
+            ],
+            "title": "Egress Class",
+            "type": "string"
+          },
+          "hosting": {
+            "description": "where it runs: inside the sealed box, on the provider's own infrastructure (or a vendor under the provider's BAA), or anywhere else",
+            "enum": [
+              "local",
+              "provider_managed",
+              "third_party"
+            ],
+            "title": "Hosting",
+            "type": "string"
+          },
+          "manifest_version": {
+            "const": "1",
+            "title": "Manifest Version",
+            "type": "string"
+          },
+          "name": {
+            "description": "the software identity, as a person would read it",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "operator_did": {
+            "description": "the organisation or person operating this client, as a DID",
+            "title": "Operator Did",
+            "type": "string"
+          },
+          "scopes_ceiling": {
+            "description": "the most this client will ever ask for; a grant narrower than this still wins",
+            "items": {
+              "enum": [
+                "cgm",
+                "daily",
+                "labs",
+                "body_composition",
+                "recovery",
+                "activity",
+                "insights",
+                "told_to_guardian"
+              ],
+              "type": "string"
+            },
+            "title": "Scopes Ceiling",
+            "type": "array"
+          },
+          "trust": {
+            "description": "the trust ladder of D-AG6b: resolvable (registered DID and manifest, self-certified), vouched (a vouching authority countersigned vendor and manifest), attested (the runtime can prove its own software identity). Tier is the ceiling; the grant is the floor.",
+            "enum": [
+              "resolvable",
+              "vouched",
+              "attested"
+            ],
+            "title": "Trust",
+            "type": "string"
+          }
+        },
+        "required": [
+          "manifest_version",
+          "agent_did",
+          "name",
+          "operator_did",
+          "trust",
+          "scopes_ceiling",
+          "hosting",
+          "egress_class"
+        ],
+        "title": "AgentManifest",
+        "type": "object"
+      },
+      "AuthFinishRequest": {
+        "properties": {
+          "ceremony_id": {
+            "title": "Ceremony Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          }
+        },
+        "required": [
+          "ceremony_id",
+          "credential"
+        ],
+        "title": "AuthFinishRequest",
+        "type": "object"
+      },
+      "AuthFinishResponse": {
+        "properties": {
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionToken"
+          }
+        },
+        "required": [
+          "did",
+          "session"
+        ],
+        "title": "AuthFinishResponse",
+        "type": "object"
+      },
+      "BeginResponse": {
+        "properties": {
+          "ceremony_id": {
+            "title": "Ceremony Id",
+            "type": "string"
+          },
+          "options": {
+            "additionalProperties": true,
+            "title": "Options",
+            "type": "object"
+          }
+        },
+        "required": [
+          "ceremony_id",
+          "options"
+        ],
+        "title": "BeginResponse",
+        "type": "object"
+      },
+      "DeepHealthReport": {
+        "properties": {
+          "checks": {
+            "additionalProperties": {
+              "enum": [
+                "ok",
+                "fail"
+              ],
+              "type": "string"
+            },
+            "description": "One entry per outbound dependency, by a short fixed name: `mail_relay` (the mail relay resolves and answers). Empty when the deployment has no way out to check.",
+            "title": "Checks",
+            "type": "object"
+          },
+          "ok": {
+            "description": "True when every check passed (the response is then 200; otherwise 503).",
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "checks"
+        ],
+        "title": "DeepHealthReport",
+        "type": "object"
+      },
+      "DemandRequest": {
+        "properties": {
+          "data_categories": {
+            "items": {
+              "enum": [
+                "cgm",
+                "daily",
+                "labs",
+                "body_composition",
+                "recovery",
+                "activity",
+                "insights",
+                "told_to_guardian"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Data Categories",
+            "type": "array"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Destination"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "holder": {
+            "minLength": 1,
+            "title": "Holder",
+            "type": "string"
+          },
+          "legal_basis": {
+            "enum": [
+              "eu_data_act",
+              "gdpr_art15",
+              "gdpr_art20",
+              "ehds",
+              "hipaa_164_524"
+            ],
+            "title": "Legal Basis",
+            "type": "string"
+          },
+          "proof_of_subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof Of Subject"
+          },
+          "purpose": {
+            "minLength": 1,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did",
+          "holder",
+          "data_categories",
+          "purpose",
+          "legal_basis"
+        ],
+        "title": "DemandRequest",
+        "type": "object"
+      },
+      "DemandStatusUpdate": {
+        "properties": {
+          "status": {
+            "enum": [
+              "acknowledged",
+              "data_delivered",
+              "withdrawn"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "DemandStatusUpdate",
+        "type": "object"
+      },
+      "DemoModeRequest": {
+        "description": "Toggle account demo mode. No subject_did \u2014 taken from the session.",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "DemoModeRequest",
+        "type": "object"
+      },
+      "DemoSessionRequest": {
+        "description": "Client credentials in the body (``client_secret_post``); HTTP Basic is the\nalternative. Both optional here so a Basic caller can send an empty body.",
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Secret"
+          }
+        },
+        "title": "DemoSessionRequest",
+        "type": "object"
+      },
+      "Destination": {
+        "description": "Where a direct transfer should land \u2014 the user's own node. Names only.",
+        "properties": {
+          "did": {
+            "minLength": 1,
+            "title": "Did",
+            "type": "string"
+          },
+          "endpoint": {
+            "minLength": 1,
+            "title": "Endpoint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "did",
+          "endpoint"
+        ],
+        "title": "Destination",
+        "type": "object"
+      },
+      "EnrollRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "session_token": {
+            "title": "Session Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token",
+          "email"
+        ],
+        "title": "EnrollRequest",
+        "type": "object"
+      },
+      "GrantRequest": {
+        "properties": {
+          "duration_days": {
+            "default": 90,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "grantee": {
+            "$ref": "#/components/schemas/Grantee"
+          },
+          "proof": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/Purpose"
+          },
+          "scopes": {
+            "items": {
+              "enum": [
+                "cgm",
+                "daily",
+                "labs",
+                "body_composition",
+                "recovery",
+                "activity",
+                "insights",
+                "told_to_guardian"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Scopes",
+            "type": "array"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did",
+          "grantee",
+          "scopes",
+          "purpose"
+        ],
+        "title": "GrantRequest",
+        "type": "object"
+      },
+      "Grantee": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Grantee",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Holder": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/HolderRole"
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ],
+        "title": "Holder",
+        "type": "object"
+      },
+      "HolderRole": {
+        "description": "Who holds it (PRD L2b ``holder.role``).",
+        "enum": [
+          "source",
+          "home_node",
+          "replica",
+          "user_device",
+          "ehr",
+          "external_holder"
+        ],
+        "title": "HolderRole",
+        "type": "string"
+      },
+      "IdentityResponse": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "did_document": {
+            "additionalProperties": true,
+            "title": "Did Document",
+            "type": "object"
+          }
+        },
+        "required": [
+          "did",
+          "created",
+          "did_document"
+        ],
+        "title": "IdentityResponse",
+        "type": "object"
+      },
+      "IntrospectRequest": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "IntrospectRequest",
+        "type": "object"
+      },
+      "Location": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LocationKind"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "title": "Location",
+        "type": "object"
+      },
+      "LocationKind": {
+        "description": "How ``location.ref`` resolves (PRD L2b ``location.kind``).",
+        "enum": [
+          "did_service",
+          "endpoint",
+          "provider"
+        ],
+        "title": "LocationKind",
+        "type": "string"
+      },
+      "Manifest": {
+        "additionalProperties": false,
+        "description": "Content addressing for derived/twin artifacts. Never for raw_at_source.",
+        "properties": {
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "recipe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "content_hash"
+        ],
+        "title": "Manifest",
+        "type": "object"
+      },
+      "NodeKey": {
+        "additionalProperties": false,
+        "description": "One signing key a node's operator has declared.",
+        "properties": {
+          "from": {
+            "description": "When the node started signing with this key (ISO 8601 date, or date-time with offset).",
+            "title": "From",
+            "type": "string"
+          },
+          "kid": {
+            "description": "RFC 7638 JWK thumbprint of the node's public key: SHA-256 over {\"crv\",\"kty\",\"x\",\"y\"} in lexicographic order with no whitespace, base64url without padding.",
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "title": "Kid",
+            "type": "string"
+          },
+          "revoked_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "revoked keys: the first suspect time, published as information. It opens no window: a quote's date is its own statement, which the holder of a revoked key can write, so a revoked key fails every quote it signed, whatever its date.",
+            "title": "Revoked From"
+          },
+          "status": {
+            "description": "current: signs today. retired: signed until `until`; a quote dated before `until` (by its own `generated_at`) counts as this node's. revoked: nothing it signed counts, whatever date the quote carries.",
+            "enum": [
+              "current",
+              "retired",
+              "revoked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "retired keys: when the node stopped signing with it. A quote generated at or after this time does not count as this node's.",
+            "title": "Until"
+          }
+        },
+        "required": [
+          "kid",
+          "status",
+          "from"
+        ],
+        "title": "NodeKey",
+        "type": "object"
+      },
+      "NodeKeyList": {
+        "additionalProperties": false,
+        "description": "The keys declared for one node, in any order.",
+        "properties": {
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/NodeKey"
+            },
+            "title": "Keys",
+            "type": "array"
+          },
+          "node_id": {
+            "description": "The node's `node_id`, as its attestation publishes it.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+            "title": "Node Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "node_id",
+          "keys"
+        ],
+        "title": "NodeKeyList",
+        "type": "object"
+      },
+      "NodeKeyRegistry": {
+        "additionalProperties": false,
+        "description": "The network's published node keys (``GET /v1/node-keys``).",
+        "properties": {
+          "anchor": {
+            "default": "The signing keys each node's operator has declared to LifeCare.ID, with the dates each key was in use; a quote whose key is not listed here for its node cannot be attributed to that node.",
+            "description": "One sentence: what this list is and where it comes from.",
+            "title": "Anchor",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/NodeKeyList"
+            },
+            "title": "Nodes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "nodes"
+        ],
+        "title": "NodeKeyRegistry",
+        "type": "object"
+      },
+      "NotifyRequest": {
+        "properties": {
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "did",
+          "kind"
+        ],
+        "title": "NotifyRequest",
+        "type": "object"
+      },
+      "OperatorAlertRequest": {
+        "properties": {
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "text"
+        ],
+        "title": "OperatorAlertRequest",
+        "type": "object"
+      },
+      "PairingExchangeRequest": {
+        "properties": {
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The native app's public-client id (for example `proforta-android`). When given, it must be a registered public client, and the response also carries a rotating `refresh_token` bound to this client and the member's DID. Omitted: no refresh token, the response as before.",
+            "title": "Client Id"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "PairingExchangeRequest",
+        "type": "object"
+      },
+      "PairingExchangeResponse": {
+        "properties": {
+          "access_token": {
+            "description": "The member's session (`lcs_...`).",
+            "title": "Access Token",
+            "type": "string"
+          },
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "expires_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Seconds until `expires_at`, as the code exchange reports it, so a device whose clock is off still knows when to renew.",
+            "title": "Expires In"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present only when the request named a native `client_id`. Trade it at `POST /token` (`grant_type=refresh_token`) for a fresh session and its successor; each one is single-use, and presenting a spent one ends the connection.",
+            "title": "Refresh Token"
+          },
+          "token_type": {
+            "default": "Bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_at",
+          "did"
+        ],
+        "title": "PairingExchangeResponse",
+        "type": "object"
+      },
+      "PanelGrantRequest": {
+        "description": "A grant initiated from the panel. No ``subject_did`` \u2014 it comes from the\nauthenticated session, so the panel cannot grant on another user's behalf.",
+        "properties": {
+          "duration_days": {
+            "default": 90,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "grantee": {
+            "$ref": "#/components/schemas/Grantee"
+          },
+          "proof": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proof"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/Purpose"
+          },
+          "scopes": {
+            "items": {
+              "enum": [
+                "cgm",
+                "daily",
+                "labs",
+                "body_composition",
+                "recovery",
+                "activity",
+                "insights",
+                "told_to_guardian"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "grantee",
+          "scopes",
+          "purpose"
+        ],
+        "title": "PanelGrantRequest",
+        "type": "object"
+      },
+      "PublicKeyJwk": {
+        "description": "Device-held P-256 public key (the only kind L1 accepts in MVP).",
+        "properties": {
+          "crv": {
+            "const": "P-256",
+            "title": "Crv",
+            "type": "string"
+          },
+          "kty": {
+            "const": "EC",
+            "title": "Kty",
+            "type": "string"
+          },
+          "x": {
+            "title": "X",
+            "type": "string"
+          },
+          "y": {
+            "title": "Y",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kty",
+          "crv",
+          "x",
+          "y"
+        ],
+        "title": "PublicKeyJwk",
+        "type": "object"
+      },
+      "Purpose": {
+        "properties": {
+          "dpv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dpv"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "Purpose",
+        "type": "object"
+      },
+      "ReceivingAuthorizationRequest": {
+        "properties": {
+          "data_categories": {
+            "items": {
+              "enum": [
+                "cgm",
+                "daily",
+                "labs",
+                "body_composition",
+                "recovery",
+                "activity",
+                "insights",
+                "told_to_guardian"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Data Categories",
+            "type": "array"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/Destination"
+          },
+          "duration_days": {
+            "default": 30,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "holder": {
+            "minLength": 1,
+            "title": "Holder",
+            "type": "string"
+          },
+          "legal_basis": {
+            "enum": [
+              "eu_data_act",
+              "gdpr_art15",
+              "gdpr_art20",
+              "ehds",
+              "hipaa_164_524"
+            ],
+            "title": "Legal Basis",
+            "type": "string"
+          },
+          "purpose": {
+            "minLength": 1,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did",
+          "holder",
+          "data_categories",
+          "purpose",
+          "destination",
+          "legal_basis"
+        ],
+        "title": "ReceivingAuthorizationRequest",
+        "type": "object"
+      },
+      "RecoverBeginRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "RecoverBeginRequest",
+        "type": "object"
+      },
+      "RecoverFinishRequest": {
+        "properties": {
+          "ceremony_id": {
+            "title": "Ceremony Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          },
+          "recovery_token": {
+            "title": "Recovery Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recovery_token",
+          "ceremony_id",
+          "credential"
+        ],
+        "title": "RecoverFinishRequest",
+        "type": "object"
+      },
+      "RegisterBeginRequest": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "title": "RegisterBeginRequest",
+        "type": "object"
+      },
+      "RegisterFinishRequest": {
+        "properties": {
+          "age_confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The person's confirmation that they are 18 or older. Required when the ceremony creates a NEW identity.",
+            "title": "Age Confirmed"
+          },
+          "ceremony_id": {
+            "title": "Ceremony Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Version of the member terms and privacy notice the person accepted. Required when the ceremony creates a NEW identity.",
+            "title": "Terms Version"
+          }
+        },
+        "required": [
+          "ceremony_id",
+          "credential"
+        ],
+        "title": "RegisterFinishRequest",
+        "type": "object"
+      },
+      "RegisterFinishResponse": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "did_document": {
+            "additionalProperties": true,
+            "title": "Did Document",
+            "type": "object"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionToken"
+          }
+        },
+        "required": [
+          "did",
+          "created",
+          "did_document",
+          "session"
+        ],
+        "title": "RegisterFinishResponse",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "age_confirmed": {
+            "description": "The person's confirmation that they are 18 or older. Must be true; a new identity is refused (422) otherwise.",
+            "title": "Age Confirmed",
+            "type": "boolean"
+          },
+          "public_key_jwk": {
+            "$ref": "#/components/schemas/PublicKeyJwk"
+          },
+          "terms_version": {
+            "description": "Version of the member terms and privacy notice the person was shown, e.g. '2026-09-07'. Must be a version this service knows; recorded against the identity.",
+            "title": "Terms Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_key_jwk",
+          "terms_version",
+          "age_confirmed"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RegistryEvent": {
+        "description": "The transition being recorded (PRD L2b \"Events and transitions\").",
+        "enum": [
+          "registered",
+          "versioned",
+          "tiered",
+          "moved",
+          "shredded",
+          "deleted"
+        ],
+        "title": "RegistryEvent",
+        "type": "string"
+      },
+      "RegistryRecordRequest": {
+        "additionalProperties": false,
+        "description": "One registry entry plus the event that produced it.\n\n``extra=\"forbid\"`` everywhere: an unknown key is a 422, not a silently\ndropped field, because a dropped field is how free text gets normalised into\na store that promised it holds none.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ResourceCategory"
+          },
+          "consent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Id"
+          },
+          "event": {
+            "$ref": "#/components/schemas/RegistryEvent"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "when this copy stops being held, as a registry timestamp (YYYY-MM-DDThh:mm:ss+00:00). Valid only on `kind: copy`; any other kind carrying one is a 422. The holder's declaration, not an enforcement: lifecare.id holds no data and deletes none.",
+            "title": "Expires At"
+          },
+          "holder": {
+            "$ref": "#/components/schemas/Holder"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Manifest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          },
+          "supersedes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes"
+          }
+        },
+        "required": [
+          "subject_did",
+          "resource_id",
+          "kind",
+          "category",
+          "holder",
+          "location",
+          "event"
+        ],
+        "title": "RegistryRecordRequest",
+        "type": "object"
+      },
+      "ResourceCategory": {
+        "description": "The registered category vocabulary (PRD L2b ``ResourceCategory``).\n\n**Strict.** An unknown category is rejected with 422 rather than stored: a\nregistry that accepted a free-form category would be a registry that could\ncarry a health fact in its own field names.",
+        "enum": [
+          "cgm",
+          "daily",
+          "labs",
+          "body_composition",
+          "recovery",
+          "activity",
+          "insights",
+          "home_node_custody",
+          "edge_insights",
+          "insight_narratives",
+          "journey",
+          "body_comp",
+          "profile",
+          "mps_history",
+          "experience_ledger",
+          "conversations",
+          "person_facts",
+          "twin_parameters",
+          "consolidations",
+          "retrieval_index",
+          "compiled_context",
+          "adapter",
+          "signed_user_copy",
+          "replica",
+          "health_events",
+          "imported_measures",
+          "learning_preference",
+          "ehr_record",
+          "clinical_context",
+          "outside_records_working_set",
+          "reconciled_copy"
+        ],
+        "title": "ResourceCategory",
+        "type": "string"
+      },
+      "ResourceKind": {
+        "description": "What class of thing exists (PRD L2b ``kind``).",
+        "enum": [
+          "raw_at_source",
+          "derived",
+          "twin_artifact",
+          "copy"
+        ],
+        "title": "ResourceKind",
+        "type": "string"
+      },
+      "RevokeRequest": {
+        "properties": {
+          "consent_id": {
+            "title": "Consent Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consent_id"
+        ],
+        "title": "RevokeRequest",
+        "type": "object"
+      },
+      "RotateRequest": {
+        "properties": {
+          "did": {
+            "title": "Did",
+            "type": "string"
+          },
+          "new_public_key_jwk": {
+            "$ref": "#/components/schemas/PublicKeyJwk"
+          }
+        },
+        "required": [
+          "did",
+          "new_public_key_jwk"
+        ],
+        "title": "RotateRequest",
+        "type": "object"
+      },
+      "SessionOnlyRequest": {
+        "properties": {
+          "session_token": {
+            "title": "Session Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_token"
+        ],
+        "title": "SessionOnlyRequest",
+        "type": "object"
+      },
+      "SessionRequest": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "SessionRequest",
+        "type": "object"
+      },
+      "SessionToken": {
+        "properties": {
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expires_at"
+        ],
+        "title": "SessionToken",
+        "type": "object"
+      },
+      "SessionVerifyResponse": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "did": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Did"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "required": [
+          "active"
+        ],
+        "title": "SessionVerifyResponse",
+        "type": "object"
+      },
+      "SubjectCredentialRequest": {
+        "properties": {
+          "audience": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audience"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did"
+        ],
+        "title": "SubjectCredentialRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "lifecareid__authorization__TokenRequest": {
+        "properties": {
+          "purpose": {
+            "minLength": 1,
+            "title": "Purpose",
+            "type": "string"
+          },
+          "purpose_dpv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose Dpv"
+          },
+          "requester": {
+            "minLength": 1,
+            "title": "Requester",
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "cgm",
+              "daily",
+              "labs",
+              "body_composition",
+              "recovery",
+              "activity",
+              "insights",
+              "told_to_guardian"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "subject_did": {
+            "title": "Subject Did",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject_did",
+          "scope",
+          "purpose",
+          "requester"
+        ],
+        "title": "TokenRequest",
+        "type": "object"
+      },
+      "lifecareid__recovery__TokenRequest": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "TokenRequest",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Patient-held consent and authorization layer. Mediates identity, consent, tokens, and revocation; never stores or relays health data. Contract: docs/contracts/ in this repo.",
+    "title": "lifecare.id API",
+    "version": "0.24.1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/agent/{agent_id}/did.json": {
+      "get": {
+        "description": "Reserved route for the agent namespace (D-AG4a): the resolution path a\n`did:web:<domain>:agent:<thumb16>` will use. Agent identities cannot be\nregistered or resolved today, so this always answers `404 agent identities\nare not yet supported`. It exists so the namespace is held, and so a caller\nthat guesses at it gets that answer instead of a stray page or a 500.",
+        "operationId": "agent_did_web_resolution_agent__agent_id__did_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Agent Did Web Resolution Agent  Agent Id  Did Json Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Agent Did Web Resolution"
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Healthz Healthz Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz"
+      }
+    },
+    "/healthz/deep": {
+      "get": {
+        "description": "Whether this service can reach what it depends on, which `/healthz`\n(the process is up) cannot say. Unauthenticated. The checks run at most\nonce a minute and the answer comes within a few seconds whatever the\nnetwork does. The body names each check and its state, never a host,\nan error or a timing.",
+        "operationId": "healthz_deep_healthz_deep_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepHealthReport"
+                }
+              }
+            },
+            "description": "Every check passed.",
+            "headers": {
+              "Cache-Control": {
+                "description": "`no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepHealthReport"
+                }
+              }
+            },
+            "description": "At least one check failed; `checks` says which.",
+            "headers": {
+              "Cache-Control": {
+                "description": "`no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Deep health: whether the service's outbound dependencies answer"
+      }
+    },
+    "/u/{user_id}/did.json": {
+      "get": {
+        "operationId": "did_web_resolution_u__user_id__did_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Did Web Resolution U  User Id  Did Json Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Did Web Resolution"
+      }
+    },
+    "/v1/access/record": {
+      "post": {
+        "operationId": "record_access_v1_access_record_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Record Access V1 Access Record Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Access"
+      }
+    },
+    "/v1/consent/grant": {
+      "post": {
+        "description": "Create a grant on the server-to-server channel.\n\nTwo gates, each with its own flag and each fail-open only in its default\nposition (F1/F2):\n\n* **who is calling, and for whom**: a holder signature, confidential-\n  client credentials or the member's own session, verified whenever\n  presented, required when ``require_caller_auth`` is on; with it on, the\n  caller must be the member or a first-party client;\n* **who approved it**: the subject's device proof over the canonical\n  grant digest, verified whenever presented, required when\n  ``require_grant_proof`` is on, except for the narrowed first-party\n  exemption (``caller_auth.may_grant_without_proof``).\n\nAnd one rule with no flag of its own: a grant naming a grantee in\n``member_only_grantees`` is accepted from the member alone\n(``caller_auth.require_member_for_grantee``), checked first.",
+        "operationId": "grant_v1_consent_grant_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Grant V1 Consent Grant Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grant"
+      }
+    },
+    "/v1/consent/grants/{did}": {
+      "get": {
+        "description": "A member's grant receipts. Read by the member (their session, or a\nsignature by their DID) or a first-party client acting for them (the\nmember's node, which checks what is already granted before it grants).",
+        "operationId": "grants_v1_consent_grants__did__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Grants V1 Consent Grants  Did  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grants"
+      }
+    },
+    "/v1/consent/ledger/{did}": {
+      "get": {
+        "description": "A member's hash-chained ledger. Read by the member alone: it is their\nrecord of who did what, and no first-party flow reads it (the app shows it\nthrough the session-bound `/v1/panel/feed`).",
+        "operationId": "ledger_v1_consent_ledger__did__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ledger V1 Consent Ledger  Did  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ledger"
+      }
+    },
+    "/v1/consent/revoke": {
+      "post": {
+        "operationId": "revoke_v1_consent_revoke_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Revoke V1 Consent Revoke Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke"
+      }
+    },
+    "/v1/demo/session": {
+      "post": {
+        "description": "Mint a throwaway demo identity and a session for it.\n\nThe identity carries the account-level demo flag, so a node serves it\nsample data and the app badges it. Requires the confidential client's\ncredentials; 404 unless demo sessions are enabled on this instance.",
+        "operationId": "demo_session_v1_demo_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DemoSessionRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Demo Session V1 Demo Session Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Session"
+      }
+    },
+    "/v1/identity/auth/begin": {
+      "post": {
+        "operationId": "auth_begin_v1_identity_auth_begin_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Auth Begin"
+      }
+    },
+    "/v1/identity/auth/finish": {
+      "post": {
+        "operationId": "auth_finish_v1_identity_auth_finish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthFinishResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Auth Finish"
+      }
+    },
+    "/v1/identity/pairing/exchange": {
+      "post": {
+        "operationId": "exchange_v1_identity_pairing_exchange_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingExchangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingExchangeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Exchange"
+      }
+    },
+    "/v1/identity/refresh/admin/revoke": {
+      "post": {
+        "description": "End a member's native app connections: every refresh-token family for the\nDID (or one client's), and every session those families minted. The member's\napps then ask them to reconnect. Trust-partner gated, fail-secure when no\napprover token is configured (the same gate as key rotation).",
+        "operationId": "admin_revoke_v1_identity_refresh_admin_revoke_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-trust-partner-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Trust-Partner-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRevokeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Revoke"
+      }
+    },
+    "/v1/identity/register": {
+      "post": {
+        "operationId": "register_v1_identity_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Register"
+      }
+    },
+    "/v1/identity/register/begin": {
+      "post": {
+        "operationId": "register_begin_v1_identity_register_begin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RegisterBeginRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Register Begin"
+      }
+    },
+    "/v1/identity/register/finish": {
+      "post": {
+        "operationId": "register_finish_v1_identity_register_finish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterFinishResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Register Finish"
+      }
+    },
+    "/v1/identity/resolve/{did}": {
+      "get": {
+        "operationId": "resolve_v1_identity_resolve__did__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Resolve V1 Identity Resolve  Did  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve"
+      }
+    },
+    "/v1/identity/rotate": {
+      "post": {
+        "operationId": "rotate_v1_identity_rotate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-trust-partner-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Trust-Partner-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate"
+      }
+    },
+    "/v1/identity/session/logout": {
+      "post": {
+        "operationId": "session_logout_v1_identity_session_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Session Logout V1 Identity Session Logout Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Session Logout"
+      }
+    },
+    "/v1/identity/session/verify": {
+      "post": {
+        "operationId": "session_verify_v1_identity_session_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionVerifyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Session Verify"
+      }
+    },
+    "/v1/identity/{did}/demo-mode": {
+      "get": {
+        "operationId": "demo_mode_v1_identity__did__demo_mode_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Demo Mode V1 Identity  Did  Demo Mode Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Demo Mode"
+      }
+    },
+    "/v1/node-keys": {
+      "get": {
+        "description": "Which signing keys LifeCare.ID lists for each node, and when each was\nvalid. Verifiers compare the RFC 7638 thumbprint of a quote's `node_key`\nwith this list to say whether the key is the node's published key. No\nauthentication, CORS open, cacheable for five minutes.",
+        "operationId": "node_keys_v1_node_keys_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeKeyRegistry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "description": "The registry setting is present but unusable; verifiers report the key status as unavailable."
+          }
+        },
+        "summary": "The signing keys declared for each node (public, read-only)",
+        "tags": [
+          "node-keys"
+        ]
+      }
+    },
+    "/v1/notify": {
+      "post": {
+        "deprecated": true,
+        "description": "Retired (2026-10-04). Member re-engagement emails are not sent: every\ncall answers ``{\"sent\": false, \"reason\": \"retired\"}``, whatever the kind,\nand no address is read.",
+        "operationId": "notify_v1_notify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Notify V1 Notify Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notify"
+      }
+    },
+    "/v1/notify/operator": {
+      "post": {
+        "description": "Node-side operator alert (e.g. a new error fingerprint on the beta).\n\n**Only the member's own node may send one:** a client in\n``LIFECAREID_FIRST_PARTY_CLIENTS`` presenting its client credential\n(HTTP Basic). No credential is ``401``, any other caller (another client,\na holder signature, a member's session) ``403``, before anything is sent.\nThis holds in every deployment, whatever\n``LIFECAREID_REQUIRE_CALLER_AUTH`` says (security audit F11).\n\nSends to the FIXED configured operator address only (never\ncaller-supplied). No-op if unconfigured. Carries operational text only,\nno user health data.",
+        "operationId": "notify_operator_v1_notify_operator_post",
+        "parameters": [
+          {
+            "description": "`Basic base64(client_id:client_secret)`: the member's own node's client credential (a client in LIFECAREID_FIRST_PARTY_CLIENTS).",
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`Basic base64(client_id:client_secret)`: the member's own node's client credential (a client in LIFECAREID_FIRST_PARTY_CLIENTS).",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorAlertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Notify Operator V1 Notify Operator Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No credential was presented, or a presented one failed (a wrong client secret, a bad signature). Nothing is sent."
+          },
+          "403": {
+            "description": "The caller is not a first-party client: another client, a holder signature, a member's session. Nothing is sent."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notify Operator"
+      }
+    },
+    "/v1/panel/demo-mode": {
+      "get": {
+        "description": "The session user's account demo-mode flag (default False = real data).",
+        "operationId": "get_demo_mode_v1_panel_demo_mode_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Demo Mode V1 Panel Demo Mode Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Demo Mode"
+      },
+      "post": {
+        "description": "Toggle demo mode for the session user. Demo = the node serves sample\n(synthetic) data; off = the user's real data. Account-level, follows the\nidentity across apps.",
+        "operationId": "set_demo_mode_v1_panel_demo_mode_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoModeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Demo Mode V1 Panel Demo Mode Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Demo Mode"
+      }
+    },
+    "/v1/panel/feed": {
+      "get": {
+        "description": "The access/consent audit feed (\u00a73.3): newest-first, filterable by\ncategory, keyset-paginated via ``before``. ``chain_valid`` drives the\ntamper-evident badge at the feed head.",
+        "operationId": "feed_v1_panel_feed_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Category",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Feed V1 Panel Feed Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Feed"
+      }
+    },
+    "/v1/panel/grant": {
+      "post": {
+        "description": "Grant a partner access to scopes for a purpose, as the session user.\n\n**Named exemption (F1), narrowed 2026-09-28 (W0-5).** When\n``require_grant_proof`` is on, a grant with **no device proof** is accepted\nhere only when its grantee is first party: an id in\n``Settings.first_party_grantees`` or the member's own DID. The session\nbehind it was minted by a passkey ceremony, so the person is present, and\nthe panel client has no proof plumbing yet. A grant to anyone else needs\nthe device proof, because a session is not held by the member alone: every\nrelying party that signs the member in receives one (security review\nP2-2), and before the narrowing any of them could grant any party through\nthis route. A proof the panel *does* send is verified exactly as anywhere\nelse, and the remaining gap is written down in ``docs/security-audit.md``.",
+        "operationId": "grant_v1_panel_grant_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PanelGrantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Grant V1 Panel Grant Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grant"
+      }
+    },
+    "/v1/panel/pairing-token": {
+      "post": {
+        "description": "Mint a short-lived, single-use token the user's edge app exchanges for a\nsession on THIS DID \u2014 pairs the edge to the signed-in identity in one motion\n(no second sign-in; the edge can't land on a different DID).",
+        "operationId": "pairing_token_v1_panel_pairing_token_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pairing Token V1 Panel Pairing Token Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pairing Token"
+      }
+    },
+    "/v1/panel/resources": {
+      "get": {
+        "description": "The person's current ownership-and-location map, grouped by holder.\n\n``erased`` is computed from the registry, not from the holder's word: a\nholder is erased for this subject exactly when none of its entries is\n``active`` or ``tiered``.",
+        "operationId": "panel_resources_v1_panel_resources_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Panel Resources V1 Panel Resources Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Panel Resources"
+      }
+    },
+    "/v1/panel/revoke": {
+      "post": {
+        "description": "Revoke a grant. The consent must belong to the session user \u2014 an\nunknown or other-user consent returns 404 (no existence leak).",
+        "operationId": "revoke_v1_panel_revoke_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Revoke V1 Panel Revoke Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke"
+      }
+    },
+    "/v1/panel/summary": {
+      "get": {
+        "description": "Identity + the partners/purposes that can currently read which scopes\n(\u00a73.2). Only live grants \u2014 revoked and expired ones drop off.",
+        "operationId": "summary_v1_panel_summary_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Summary V1 Panel Summary Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summary"
+      }
+    },
+    "/v1/recovery/begin": {
+      "post": {
+        "operationId": "recover_begin_v1_recovery_begin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoverBeginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Recover Begin V1 Recovery Begin Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Recover Begin"
+      }
+    },
+    "/v1/recovery/email": {
+      "post": {
+        "operationId": "enroll_v1_recovery_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Enroll V1 Recovery Email Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Enroll"
+      }
+    },
+    "/v1/recovery/email/status": {
+      "post": {
+        "operationId": "status_v1_recovery_email_status_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionOnlyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Status V1 Recovery Email Status Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status"
+      }
+    },
+    "/v1/recovery/email/verify": {
+      "post": {
+        "operationId": "verify_email_v1_recovery_email_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/lifecareid__recovery__TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Verify Email V1 Recovery Email Verify Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Verify Email"
+      }
+    },
+    "/v1/recovery/finish": {
+      "post": {
+        "operationId": "recover_finish_v1_recovery_finish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoverFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Recover Finish V1 Recovery Finish Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Recover Finish"
+      }
+    },
+    "/v1/registry/record": {
+      "post": {
+        "description": "A holder registers / versions / tiers / moves / shreds a resource.\n\nWho may write (security audit F11, operator ruling of 2026-10-04):\n\n* **the member's own node**, a client in\n  ``LIFECAREID_FIRST_PARTY_CLIENTS`` presenting its client credential\n  (HTTP Basic): its own entries (``holder.id`` is its client id) in any\n  ``holder.role`` but ``user_device``, and source entries\n  (``holder.role: source``, a provider id as ``holder.id``), for any\n  member;\n* **a signed holder** (``X-LifeCare-Signature``): only entries whose\n  ``holder.id`` is the DID that signed, in any ``holder.role`` but\n  ``home_node`` and ``user_device``, and only for a member who has an\n  active grant naming that DID as grantee;\n* **the member's own device** (their session, ``Bearer lcs_...``, or a\n  signature by their own DID): only their own ``user_device`` entries,\n  ``holder.id`` their DID;\n* **anyone else** writes nothing: no credential is ``401``, any other\n  caller ``403``, both before the subject DID is looked up and before\n  anything is written or ledgered.\n\nSo ``home_node`` (\"Your home node\" in the member's ledger) is written\nonly by the member's own node, and ``user_device`` (\"Your device\") only\nby the member's own device.\n\nThis holds in every deployment: it does not depend on\n``LIFECAREID_REQUIRE_HOLDER_SIGNATURE`` or\n``LIFECAREID_REQUIRE_CALLER_AUTH``. A credential that is presented is\nverified (a bad signature or client secret is ``401``). An admitted\nwrite for a subject lifecare.id does not know is ``404``.",
+        "operationId": "record_v1_registry_record_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistryRecordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Record V1 Registry Record Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No credential was presented, or a presented one failed (a bad signature, a wrong client secret). Checked before the subject DID is looked up."
+          },
+          "403": {
+            "description": "The caller may not write this entry: a client that is not first party, a first-party client writing an entry that names neither itself nor a provider source, or a user_device entry; a holder writing an entry that names another holder, a home_node or user_device entry, or for a member with no active grant naming it; or a session writing for another member or anything but its own user_device entries. Checked before the subject DID is looked up."
+          },
+          "404": {
+            "description": "An admitted caller wrote for a subject DID lifecare.id does not know."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record"
+      }
+    },
+    "/v1/registry/{did}": {
+      "get": {
+        "description": "The chained resource history for a DID, newest first, keyset-paginated\non ``entry_hash``.\n\nWho reads what (security audit F11, operator ruling of 2026-10-04):\n\n* **the member**, with their own session (``Bearer lcs_...``) or a\n  signature by their own DID: every entry (``read_as: \"subject\"``);\n* **a signed holder** (``X-LifeCare-Signature``): only the entries whose\n  ``holder_id`` is the DID that signed (``read_as: \"holder\"``). A holder\n  with no entries for this DID gets an empty page, whether or not the DID\n  is registered. ``before`` must be one of the holder's own entries.\n  ``chain_valid`` checks each entry shown against its real predecessor in\n  the member's chain, so it means the same as in the member's view;\n* **anyone else** reads nothing: no credential is ``401``, any other\n  caller (a client, another member's session) is ``403``, both before the\n  DID is looked up.\n\nThis holds in every deployment: it does not depend on\n``LIFECAREID_REQUIRE_HOLDER_SIGNATURE`` or\n``LIFECAREID_REQUIRE_CALLER_AUTH``. A credential that is presented is\nverified (a bad signature or client secret is ``401``).",
+        "operationId": "history_v1_registry__did__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response History V1 Registry  Did  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "History"
+      }
+    },
+    "/v1/revocation/{user_id}": {
+      "get": {
+        "operationId": "revocation_registry_v1_revocation__user_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Revocation Registry V1 Revocation  User Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revocation Registry"
+      }
+    },
+    "/v1/rights/demand": {
+      "post": {
+        "description": "Compose a demand for the member's data and start its SLA clock. With\ncaller authentication required, only the member themselves may issue it\n(their session, or a signature by their own DID).",
+        "operationId": "issue_demand_v1_rights_demand_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemandRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Issue Demand V1 Rights Demand Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Demand"
+      }
+    },
+    "/v1/rights/demand/{demand_id}/escalate": {
+      "post": {
+        "description": "Escalate a breached demand to the supervisory authority. With caller\nauthentication required, only the member whose demand it is may.",
+        "operationId": "escalate_v1_rights_demand__demand_id__escalate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "demand_id",
+            "required": true,
+            "schema": {
+              "title": "Demand Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Escalate V1 Rights Demand  Demand Id  Escalate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Escalate"
+      }
+    },
+    "/v1/rights/demand/{demand_id}/status": {
+      "post": {
+        "description": "Record the holder's response to a demand. With caller authentication\nrequired, only the member whose demand it is may report it.",
+        "operationId": "update_status_v1_rights_demand__demand_id__status_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "demand_id",
+            "required": true,
+            "schema": {
+              "title": "Demand Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemandStatusUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Status V1 Rights Demand  Demand Id  Status Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Status"
+      }
+    },
+    "/v1/rights/demands/{did}": {
+      "get": {
+        "description": "The member's demands. With caller authentication required, read by\nthe member alone, checked before the DID lookup, so a refused caller\ncannot tell which DIDs exist or learn a demand id.",
+        "operationId": "list_demands_v1_rights_demands__did__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "did",
+            "required": true,
+            "schema": {
+              "title": "Did",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Demands V1 Rights Demands  Did  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Demands"
+      }
+    },
+    "/v1/rights/receiving-authorization": {
+      "post": {
+        "description": "Authorize a holder to send the member's data directly to their node.\nWith caller authentication required, only the member themselves may ask\n(their session, or a signature by their own DID).",
+        "operationId": "issue_receiving_authorization_v1_rights_receiving_authorization_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceivingAuthorizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Issue Receiving Authorization V1 Rights Receiving Authorization Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Receiving Authorization"
+      }
+    },
+    "/v1/rights/subject-credential": {
+      "post": {
+        "description": "Issue a proof-of-subject credential for the calling member. With\ncaller authentication required, only the member themselves may ask\n(their session, or a signature by their own DID).",
+        "operationId": "issue_subject_credential_v1_rights_subject_credential_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Issue Subject Credential V1 Rights Subject Credential Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Subject Credential"
+      }
+    },
+    "/v1/token": {
+      "post": {
+        "operationId": "issue_token_v1_token_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-lifecare-signature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Lifecare-Signature"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/lifecareid__authorization__TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Issue Token V1 Token Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Issue Token"
+      }
+    },
+    "/v1/token/introspect": {
+      "post": {
+        "description": "Validate a token for a resource server.\n\n**Client authentication is required** (RFC 7662 section 2.1): present\nyour own client credentials, as HTTP Basic or as `client_id` and\n`client_secret` in the body. Any registered client may introspect: a\nservice client, the operator's app client, a sandbox-registered developer\nclient. No credential is `401`; a member's session or a holder signature\nis `403`. Both are answered before the token is looked up, whatever the\ntoken, in every deployment.",
+        "operationId": "introspect_v1_token_introspect_post",
+        "parameters": [
+          {
+            "description": "`Basic base64(client_id:client_secret)`: the calling resource server's own client credentials (RFC 7662 section 2.1). `client_id` and `client_secret` in the JSON body are accepted too.",
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`Basic base64(client_id:client_secret)`: the calling resource server's own client credentials (RFC 7662 section 2.1). `client_id` and `client_secret` in the JSON body are accepted too.",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntrospectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "oneOf": [
+                    {
+                      "description": "The session token (`lcs_`) of a signed-in user: the caller IS this user.",
+                      "properties": {
+                        "active": {
+                          "const": true,
+                          "title": "Active",
+                          "type": "boolean"
+                        },
+                        "expires_at": {
+                          "title": "Expires At",
+                          "type": "string"
+                        },
+                        "subject_did": {
+                          "title": "Subject Did",
+                          "type": "string"
+                        },
+                        "token_type": {
+                          "const": "user",
+                          "title": "Token Type",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "active",
+                        "token_type",
+                        "subject_did",
+                        "expires_at"
+                      ],
+                      "title": "UserTokenIntrospection",
+                      "type": "object"
+                    },
+                    {
+                      "description": "A data-access token (`lc_`) issued to a requester against a grant.\n\nNames whose data it unlocks (`resource_owner`) and never carries a\n`subject_did`: the holder is an app, not the user.",
+                      "properties": {
+                        "active": {
+                          "const": true,
+                          "title": "Active",
+                          "type": "boolean"
+                        },
+                        "consent_id": {
+                          "title": "Consent Id",
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "title": "Expires At",
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "title": "Purpose",
+                          "type": "string"
+                        },
+                        "requester": {
+                          "title": "Requester",
+                          "type": "string"
+                        },
+                        "resource_owner": {
+                          "title": "Resource Owner",
+                          "type": "string"
+                        },
+                        "scope": {
+                          "title": "Scope",
+                          "type": "string"
+                        },
+                        "token_type": {
+                          "const": "access",
+                          "title": "Token Type",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "active",
+                        "token_type",
+                        "resource_owner",
+                        "scope",
+                        "purpose",
+                        "requester",
+                        "consent_id",
+                        "expires_at"
+                      ],
+                      "title": "AccessTokenIntrospection",
+                      "type": "object"
+                    },
+                    {
+                      "description": "**Defined, not yet issued.** An actor exercising a subset of a subject's\nauthority (D-AG4b; RFC 8693 actor-claim semantics).\n\nSemantics a resource server must implement before the first one is ever\nminted:\n\n* The actor acts **for** the subject, never **as** the subject. A delegated\n  token can no more satisfy a \"the caller is the user\" check than an access\n  token can; `subject_did` here names on whose behalf the actor acts, not who\n  the caller is.\n* Scope, purpose and expiry are bounded by `parent_grant` and can never\n  exceed it. No token of any type can create, widen or extend a grant; only\n  the person can, through the passkey ceremony.\n* Revoking the delegation kills the token and leaves the parent grant intact.\n\nNo issuance path exists, so introspection cannot return this shape today. It\nis published so resource servers branch on `token_type` now.",
+                      "properties": {
+                        "active": {
+                          "const": true,
+                          "title": "Active",
+                          "type": "boolean"
+                        },
+                        "actor_did": {
+                          "description": "who acts: did:web:<domain>:agent:<id>",
+                          "title": "Actor Did",
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "title": "Expires At",
+                          "type": "string"
+                        },
+                        "parent_grant": {
+                          "description": "consent_id of the grant that bounds this delegation",
+                          "title": "Parent Grant",
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "$ref": "#/components/schemas/Purpose"
+                        },
+                        "scope": {
+                          "description": "a single scope, as an access token carries",
+                          "title": "Scope",
+                          "type": "string"
+                        },
+                        "subject_did": {
+                          "description": "on whose behalf the actor acts",
+                          "title": "Subject Did",
+                          "type": "string"
+                        },
+                        "token_type": {
+                          "const": "delegated",
+                          "title": "Token Type",
+                          "type": "string"
+                        },
+                        "trust": {
+                          "description": "the actor's trust tier; see the agent-trust developer doc",
+                          "enum": [
+                            "resolvable",
+                            "vouched",
+                            "attested"
+                          ],
+                          "title": "Trust",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "active",
+                        "token_type",
+                        "subject_did",
+                        "actor_did",
+                        "scope",
+                        "purpose",
+                        "parent_grant",
+                        "trust",
+                        "expires_at"
+                      ],
+                      "title": "DelegatedTokenIntrospection",
+                      "type": "object"
+                    },
+                    {
+                      "description": "Expired, token-revoked, consent-revoked, or simply unknown.",
+                      "properties": {
+                        "active": {
+                          "const": false,
+                          "title": "Active",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "active"
+                      ],
+                      "title": "InactiveIntrospection",
+                      "type": "object"
+                    }
+                  ],
+                  "title": "Response Introspect V1 Token Introspect Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Token status. `token_type` distinguishes the shapes: `user` (the caller is this user), `access` (an app may read this scope), and `delegated` (an actor acting for a subject inside a grant \u2014 defined here, never issued today). A resource server must fail closed on any `token_type` it does not implement."
+          },
+          "401": {
+            "description": "No client credential was presented, or a presented one failed (a wrong or unknown client secret, a malformed Basic value, a bad holder signature). Answered before the token is looked up, so the answer is the same for every token."
+          },
+          "403": {
+            "description": "The caller authenticated, but not as a client: a member's session or a holder signature. Answered before the token is looked up."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many requests for this route from this client (or, on the routes that send mail, for this mailbox) inside the window. Sent only while the deployment's rate limits are on (`LIFECAREID_RATE_LIMITS=enforce`); carries `Retry-After` in seconds. See docs/developers/security-and-compliance.md, Rate limits."
+          }
+        },
+        "summary": "Introspect"
+      }
+    }
+  }
+}

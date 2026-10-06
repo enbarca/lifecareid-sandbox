@@ -1,0 +1,16 @@
+{
+  "name": "lifecareid-sandbox-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LifeCare.ID® sandbox kit: a synthetic health-data source behind a real consent flow.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "source": "node compose/source/server.mjs",
+    "loop": "node examples/run-loop.mjs"
+  }
+}

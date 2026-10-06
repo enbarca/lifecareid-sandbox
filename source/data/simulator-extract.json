@@ -1,0 +1,3305 @@
+{
+  "schema": "lifecare-sandbox-simulator-extract/v1",
+  "simulator": {
+    "repo": "healthspannode",
+    "module": "ops.challenge_sim",
+    "persona_schema": "challenge-sim-persona/v1",
+    "oracle_schema": "challenge-sim-oracle/v1",
+    "scenario": "day_by_day"
+  },
+  "end_date": "2026-10-01",
+  "personas": [
+    {
+      "persona_id": "p1-adherent-responder",
+      "display_name": "Adherent Responder",
+      "start_date": "2026-09-02",
+      "end_date": "2026-10-01",
+      "challenge": {
+        "started_on": "2026-09-02",
+        "week_index": 4,
+        "weeks": 12
+      },
+      "focus": "maintain",
+      "anomaly_pillars": [],
+      "weeks": [
+        {
+          "week_index": 0,
+          "first_day": "2026-09-02",
+          "last_day": "2026-09-08",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 76.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "week_index": 1,
+          "first_day": "2026-09-09",
+          "last_day": "2026-09-15",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 81.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "week_index": 2,
+          "first_day": "2026-09-16",
+          "last_day": "2026-09-22",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 89.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "week_index": 3,
+          "first_day": "2026-09-23",
+          "last_day": "2026-09-29",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 89.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "week_index": 4,
+          "first_day": "2026-09-30",
+          "last_day": "2026-10-01",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 90.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "days": [
+        {
+          "date": "2026-09-02",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-02"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            }
+          }
+        },
+        {
+          "date": "2026-09-03",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-03"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            }
+          }
+        },
+        {
+          "date": "2026-09-04",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-04"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            }
+          }
+        },
+        {
+          "date": "2026-09-05",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-05"
+            },
+            "recovery": {
+              "score": 74.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            }
+          }
+        },
+        {
+          "date": "2026-09-06",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-06"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-06"
+            }
+          }
+        },
+        {
+          "date": "2026-09-07",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-07"
+            },
+            "recovery": {
+              "score": 76.0,
+              "band": "on-track",
+              "as_of": "2026-09-07"
+            }
+          }
+        },
+        {
+          "date": "2026-09-08",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 76.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "date": "2026-09-09",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 77.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-10",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-10"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-10"
+            }
+          }
+        },
+        {
+          "date": "2026-09-11",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 83.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            }
+          }
+        },
+        {
+          "date": "2026-09-12",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 83.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            }
+          }
+        },
+        {
+          "date": "2026-09-13",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-13"
+            },
+            "recovery": {
+              "score": 79.0,
+              "band": "on-track",
+              "as_of": "2026-09-13"
+            }
+          }
+        },
+        {
+          "date": "2026-09-14",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-14"
+            },
+            "recovery": {
+              "score": 81.0,
+              "band": "on-track",
+              "as_of": "2026-09-14"
+            }
+          }
+        },
+        {
+          "date": "2026-09-15",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 81.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "date": "2026-09-16",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-16"
+            },
+            "recovery": {
+              "score": 85.0,
+              "band": "on-track",
+              "as_of": "2026-09-16"
+            }
+          }
+        },
+        {
+          "date": "2026-09-17",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-17"
+            },
+            "recovery": {
+              "score": 86.0,
+              "band": "on-track",
+              "as_of": "2026-09-17"
+            }
+          }
+        },
+        {
+          "date": "2026-09-18",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-18"
+            },
+            "recovery": {
+              "score": 86.0,
+              "band": "on-track",
+              "as_of": "2026-09-18"
+            }
+          }
+        },
+        {
+          "date": "2026-09-19",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-19"
+            },
+            "recovery": {
+              "score": 86.0,
+              "band": "on-track",
+              "as_of": "2026-09-19"
+            }
+          }
+        },
+        {
+          "date": "2026-09-20",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-20"
+            },
+            "recovery": {
+              "score": 86.0,
+              "band": "on-track",
+              "as_of": "2026-09-20"
+            }
+          }
+        },
+        {
+          "date": "2026-09-21",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-21"
+            },
+            "recovery": {
+              "score": 85.0,
+              "band": "on-track",
+              "as_of": "2026-09-21"
+            }
+          }
+        },
+        {
+          "date": "2026-09-22",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 89.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-23"
+            },
+            "recovery": {
+              "score": 86.0,
+              "band": "on-track",
+              "as_of": "2026-09-23"
+            }
+          }
+        },
+        {
+          "date": "2026-09-24",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-24"
+            },
+            "recovery": {
+              "score": 87.0,
+              "band": "on-track",
+              "as_of": "2026-09-24"
+            }
+          }
+        },
+        {
+          "date": "2026-09-25",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-25"
+            },
+            "recovery": {
+              "score": 87.0,
+              "band": "on-track",
+              "as_of": "2026-09-25"
+            }
+          }
+        },
+        {
+          "date": "2026-09-26",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-26"
+            },
+            "recovery": {
+              "score": 91.0,
+              "band": "on-track",
+              "as_of": "2026-09-26"
+            }
+          }
+        },
+        {
+          "date": "2026-09-27",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-27"
+            },
+            "recovery": {
+              "score": 90.0,
+              "band": "on-track",
+              "as_of": "2026-09-27"
+            }
+          }
+        },
+        {
+          "date": "2026-09-28",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-28"
+            },
+            "recovery": {
+              "score": 91.0,
+              "band": "on-track",
+              "as_of": "2026-09-28"
+            }
+          }
+        },
+        {
+          "date": "2026-09-29",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 89.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "date": "2026-09-30",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-30"
+            },
+            "recovery": {
+              "score": 93.0,
+              "band": "on-track",
+              "as_of": "2026-09-30"
+            }
+          }
+        },
+        {
+          "date": "2026-10-01",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 90.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "labels": {
+        "sleep": "well-rested",
+        "recovery": "good",
+        "movement": "good",
+        "training": "good",
+        "glucose": null
+      },
+      "latest_insight": [
+        {
+          "family": "activity",
+          "kind": "activity.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "recovery",
+          "kind": "recovery.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "sleep",
+          "kind": "sleep.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "training",
+          "kind": "training.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        }
+      ],
+      "body_composition": {
+        "status": "tracking",
+        "band": "excellent",
+        "weight_direction": "down",
+        "lean_direction": "flat",
+        "lean_source": "measured",
+        "first_day": "2026-09-02",
+        "last_day": "2026-10-01"
+      },
+      "behaviour": {
+        "modality": "with-weights",
+        "logging": "every-day"
+      }
+    },
+    {
+      "persona_id": "p2-glp1-muscle-loser",
+      "display_name": "GLP-1 Muscle Loser",
+      "start_date": "2026-09-02",
+      "end_date": "2026-10-01",
+      "challenge": {
+        "started_on": "2026-09-02",
+        "week_index": 4,
+        "weeks": 12
+      },
+      "focus": "anabolic",
+      "anomaly_pillars": [],
+      "weeks": [
+        {
+          "week_index": 0,
+          "first_day": "2026-09-02",
+          "last_day": "2026-09-08",
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "week_index": 1,
+          "first_day": "2026-09-09",
+          "last_day": "2026-09-15",
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "week_index": 2,
+          "first_day": "2026-09-16",
+          "last_day": "2026-09-22",
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 66.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "week_index": 3,
+          "first_day": "2026-09-23",
+          "last_day": "2026-09-29",
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 54.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "week_index": 4,
+          "first_day": "2026-09-30",
+          "last_day": "2026-10-01",
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 55.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "days": [
+        {
+          "date": "2026-09-02",
+          "synced": true,
+          "pillars": {
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            }
+          }
+        },
+        {
+          "date": "2026-09-03",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-03"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            }
+          }
+        },
+        {
+          "date": "2026-09-04",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-04"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            }
+          }
+        },
+        {
+          "date": "2026-09-05",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-05"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            }
+          }
+        },
+        {
+          "date": "2026-09-06",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-06"
+            },
+            "recovery": {
+              "score": 79.0,
+              "band": "on-track",
+              "as_of": "2026-09-06"
+            }
+          }
+        },
+        {
+          "date": "2026-09-07",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-07"
+            },
+            "recovery": {
+              "score": 77.0,
+              "band": "on-track",
+              "as_of": "2026-09-07"
+            }
+          }
+        },
+        {
+          "date": "2026-09-08",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "date": "2026-09-09",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 69.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-10",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-10"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-10"
+            }
+          }
+        },
+        {
+          "date": "2026-09-11",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-11"
+            },
+            "recovery": {
+              "score": 71.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            }
+          }
+        },
+        {
+          "date": "2026-09-12",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-12"
+            },
+            "recovery": {
+              "score": 72.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            }
+          }
+        },
+        {
+          "date": "2026-09-13",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-13"
+            },
+            "recovery": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-13"
+            }
+          }
+        },
+        {
+          "date": "2026-09-14",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-14"
+            },
+            "recovery": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-14"
+            }
+          }
+        },
+        {
+          "date": "2026-09-15",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "date": "2026-09-16",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-16"
+            },
+            "recovery": {
+              "score": 69.0,
+              "band": "drifting",
+              "as_of": "2026-09-16"
+            }
+          }
+        },
+        {
+          "date": "2026-09-17",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-17"
+            },
+            "recovery": {
+              "score": 69.0,
+              "band": "drifting",
+              "as_of": "2026-09-17"
+            }
+          }
+        },
+        {
+          "date": "2026-09-18",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-18"
+            },
+            "recovery": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-18"
+            }
+          }
+        },
+        {
+          "date": "2026-09-19",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-19"
+            },
+            "recovery": {
+              "score": 66.0,
+              "band": "drifting",
+              "as_of": "2026-09-19"
+            }
+          }
+        },
+        {
+          "date": "2026-09-20",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-20"
+            },
+            "recovery": {
+              "score": 64.0,
+              "band": "drifting",
+              "as_of": "2026-09-20"
+            }
+          }
+        },
+        {
+          "date": "2026-09-21",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-21"
+            },
+            "recovery": {
+              "score": 63.0,
+              "band": "drifting",
+              "as_of": "2026-09-21"
+            }
+          }
+        },
+        {
+          "date": "2026-09-22",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 66.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-23"
+            },
+            "recovery": {
+              "score": 61.0,
+              "band": "drifting",
+              "as_of": "2026-09-23"
+            }
+          }
+        },
+        {
+          "date": "2026-09-24",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-24"
+            },
+            "recovery": {
+              "score": 61.0,
+              "band": "drifting",
+              "as_of": "2026-09-24"
+            }
+          }
+        },
+        {
+          "date": "2026-09-25",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-25"
+            },
+            "recovery": {
+              "score": 60.0,
+              "band": "drifting",
+              "as_of": "2026-09-25"
+            }
+          }
+        },
+        {
+          "date": "2026-09-26",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-26"
+            },
+            "recovery": {
+              "score": 60.0,
+              "band": "drifting",
+              "as_of": "2026-09-26"
+            }
+          }
+        },
+        {
+          "date": "2026-09-27",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-27"
+            },
+            "recovery": {
+              "score": 55.0,
+              "band": "drifting",
+              "as_of": "2026-09-27"
+            }
+          }
+        },
+        {
+          "date": "2026-09-28",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-28"
+            },
+            "recovery": {
+              "score": 54.0,
+              "band": "drifting",
+              "as_of": "2026-09-28"
+            }
+          }
+        },
+        {
+          "date": "2026-09-29",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 54.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "date": "2026-09-30",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-30"
+            },
+            "recovery": {
+              "score": 57.0,
+              "band": "drifting",
+              "as_of": "2026-09-30"
+            }
+          }
+        },
+        {
+          "date": "2026-10-01",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 55.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "labels": {
+        "sleep": "adequate",
+        "recovery": "adequate",
+        "movement": "good",
+        "training": "low",
+        "glucose": null
+      },
+      "latest_insight": [
+        {
+          "family": "activity",
+          "kind": "activity.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "recovery",
+          "kind": "recovery.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "sleep",
+          "kind": "sleep.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "training",
+          "kind": "training.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        }
+      ],
+      "body_composition": {
+        "status": "tracking",
+        "band": "watch",
+        "weight_direction": "down",
+        "lean_direction": "down",
+        "lean_source": "measured",
+        "first_day": "2026-09-02",
+        "last_day": "2026-10-01"
+      },
+      "behaviour": {
+        "modality": "no-resistance",
+        "logging": "every-day"
+      }
+    },
+    {
+      "persona_id": "p3-under-recovered",
+      "display_name": "Under-Recovered Athlete",
+      "start_date": "2026-09-02",
+      "end_date": "2026-10-01",
+      "challenge": {
+        "started_on": "2026-09-02",
+        "week_index": 4,
+        "weeks": 12
+      },
+      "focus": "recovery",
+      "anomaly_pillars": [],
+      "weeks": [
+        {
+          "week_index": 0,
+          "first_day": "2026-09-02",
+          "last_day": "2026-09-08",
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 51.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "week_index": 1,
+          "first_day": "2026-09-09",
+          "last_day": "2026-09-15",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 5.0,
+              "band": "off-track",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "week_index": 2,
+          "first_day": "2026-09-16",
+          "last_day": "2026-09-22",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "week_index": 3,
+          "first_day": "2026-09-23",
+          "last_day": "2026-09-29",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "week_index": 4,
+          "first_day": "2026-09-30",
+          "last_day": "2026-10-01",
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "days": [
+        {
+          "date": "2026-09-02",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-02"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            }
+          }
+        },
+        {
+          "date": "2026-09-03",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-03"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            }
+          }
+        },
+        {
+          "date": "2026-09-04",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 42.0,
+              "band": "off-track",
+              "as_of": "2026-09-04"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            }
+          }
+        },
+        {
+          "date": "2026-09-05",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-05"
+            },
+            "recovery": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            }
+          }
+        },
+        {
+          "date": "2026-09-06",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-06"
+            },
+            "recovery": {
+              "score": 64.0,
+              "band": "drifting",
+              "as_of": "2026-09-06"
+            }
+          }
+        },
+        {
+          "date": "2026-09-07",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-07"
+            },
+            "recovery": {
+              "score": 59.0,
+              "band": "drifting",
+              "as_of": "2026-09-07"
+            }
+          }
+        },
+        {
+          "date": "2026-09-08",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 51.0,
+              "band": "drifting",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "date": "2026-09-09",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 83.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 48.0,
+              "band": "off-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-10",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 92.0,
+              "band": "on-track",
+              "as_of": "2026-09-10"
+            },
+            "recovery": {
+              "score": 43.0,
+              "band": "off-track",
+              "as_of": "2026-09-10"
+            }
+          }
+        },
+        {
+          "date": "2026-09-11",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            },
+            "recovery": {
+              "score": 40.0,
+              "band": "off-track",
+              "as_of": "2026-09-11"
+            }
+          }
+        },
+        {
+          "date": "2026-09-12",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            },
+            "recovery": {
+              "score": 30.0,
+              "band": "off-track",
+              "as_of": "2026-09-12"
+            }
+          }
+        },
+        {
+          "date": "2026-09-13",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-13"
+            },
+            "recovery": {
+              "score": 19.0,
+              "band": "off-track",
+              "as_of": "2026-09-13"
+            }
+          }
+        },
+        {
+          "date": "2026-09-14",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-14"
+            },
+            "recovery": {
+              "score": 11.0,
+              "band": "off-track",
+              "as_of": "2026-09-14"
+            }
+          }
+        },
+        {
+          "date": "2026-09-15",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 5.0,
+              "band": "off-track",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "date": "2026-09-16",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-16"
+            },
+            "recovery": {
+              "score": 3.0,
+              "band": "off-track",
+              "as_of": "2026-09-16"
+            }
+          }
+        },
+        {
+          "date": "2026-09-17",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-17"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-17"
+            }
+          }
+        },
+        {
+          "date": "2026-09-18",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-18"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-18"
+            }
+          }
+        },
+        {
+          "date": "2026-09-19",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-19"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-19"
+            }
+          }
+        },
+        {
+          "date": "2026-09-20",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-20"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-20"
+            }
+          }
+        },
+        {
+          "date": "2026-09-21",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-21"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-21"
+            }
+          }
+        },
+        {
+          "date": "2026-09-22",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-23"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-23"
+            }
+          }
+        },
+        {
+          "date": "2026-09-24",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-24"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-24"
+            }
+          }
+        },
+        {
+          "date": "2026-09-25",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-25"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-25"
+            }
+          }
+        },
+        {
+          "date": "2026-09-26",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-26"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-26"
+            }
+          }
+        },
+        {
+          "date": "2026-09-27",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-27"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-27"
+            }
+          }
+        },
+        {
+          "date": "2026-09-28",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-28"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-28"
+            }
+          }
+        },
+        {
+          "date": "2026-09-29",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "date": "2026-09-30",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-30"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-30"
+            }
+          }
+        },
+        {
+          "date": "2026-10-01",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "labels": {
+        "sleep": "under-rested",
+        "recovery": "low",
+        "movement": "good",
+        "training": "good",
+        "glucose": null
+      },
+      "latest_insight": [
+        {
+          "family": "activity",
+          "kind": "activity.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "recovery",
+          "kind": "recovery.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "sleep",
+          "kind": "sleep.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "training",
+          "kind": "training.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        }
+      ],
+      "body_composition": {
+        "status": "no_loss",
+        "band": null,
+        "weight_direction": "flat",
+        "lean_direction": "down",
+        "lean_source": "measured",
+        "first_day": "2026-09-02",
+        "last_day": "2026-10-01"
+      },
+      "behaviour": {
+        "modality": "with-weights",
+        "logging": "every-day"
+      }
+    },
+    {
+      "persona_id": "p4-sparse-returner",
+      "display_name": "Sparse Returner",
+      "start_date": "2026-09-02",
+      "end_date": "2026-10-01",
+      "challenge": {
+        "started_on": "2026-09-02",
+        "week_index": 4,
+        "weeks": 12
+      },
+      "focus": "coverage",
+      "anomaly_pillars": [],
+      "weeks": [
+        {
+          "week_index": 0,
+          "first_day": "2026-09-02",
+          "last_day": "2026-09-08",
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "week_index": 1,
+          "first_day": "2026-09-09",
+          "last_day": "2026-09-15",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "week_index": 2,
+          "first_day": "2026-09-16",
+          "last_day": "2026-09-22",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "week_index": 3,
+          "first_day": "2026-09-23",
+          "last_day": "2026-09-29",
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "week_index": 4,
+          "first_day": "2026-09-30",
+          "last_day": "2026-10-01",
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "days": [
+        {
+          "date": "2026-09-02",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-02"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            }
+          }
+        },
+        {
+          "date": "2026-09-03",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-03"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            }
+          }
+        },
+        {
+          "date": "2026-09-04",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-04"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            }
+          }
+        },
+        {
+          "date": "2026-09-05",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-05"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            }
+          }
+        },
+        {
+          "date": "2026-09-06",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-06"
+            },
+            "recovery": {
+              "score": 76.0,
+              "band": "on-track",
+              "as_of": "2026-09-06"
+            }
+          }
+        },
+        {
+          "date": "2026-09-07",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-07"
+            },
+            "recovery": {
+              "score": 77.0,
+              "band": "on-track",
+              "as_of": "2026-09-07"
+            }
+          }
+        },
+        {
+          "date": "2026-09-08",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "date": "2026-09-09",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-10",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-11",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-12",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-13",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-14",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-15",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-16",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-17",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-18",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-19",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-20",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-21",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-22",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "synced": false,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-24",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-24"
+            },
+            "recovery": {
+              "score": 80.0,
+              "band": "on-track",
+              "as_of": "2026-09-24"
+            }
+          }
+        },
+        {
+          "date": "2026-09-25",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 0.0,
+              "band": "off-track",
+              "as_of": "2026-09-25"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-25"
+            }
+          }
+        },
+        {
+          "date": "2026-09-26",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-26"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-26"
+            }
+          }
+        },
+        {
+          "date": "2026-09-27",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-27"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-27"
+            }
+          }
+        },
+        {
+          "date": "2026-09-28",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-28"
+            },
+            "recovery": {
+              "score": 71.0,
+              "band": "on-track",
+              "as_of": "2026-09-28"
+            }
+          }
+        },
+        {
+          "date": "2026-09-29",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "date": "2026-09-30",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-09-30"
+            },
+            "recovery": {
+              "score": 77.0,
+              "band": "on-track",
+              "as_of": "2026-09-30"
+            }
+          }
+        },
+        {
+          "date": "2026-10-01",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 33.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "labels": {
+        "sleep": "adequate",
+        "recovery": "good",
+        "movement": "good",
+        "training": "low",
+        "glucose": null
+      },
+      "latest_insight": [
+        {
+          "family": "activity",
+          "kind": "activity.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "recovery",
+          "kind": "recovery.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "sleep",
+          "kind": "sleep.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "training",
+          "kind": "training.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        }
+      ],
+      "body_composition": {
+        "status": "tracking",
+        "band": "good",
+        "weight_direction": "down",
+        "lean_direction": "flat",
+        "lean_source": "measured",
+        "first_day": "2026-09-02",
+        "last_day": "2026-10-01"
+      },
+      "behaviour": {
+        "modality": "with-weights",
+        "logging": "quiet-stretch"
+      }
+    },
+    {
+      "persona_id": "p5-glucose-anomaly",
+      "display_name": "Glucose Anomaly",
+      "start_date": "2026-09-02",
+      "end_date": "2026-10-01",
+      "challenge": {
+        "started_on": "2026-09-02",
+        "week_index": 4,
+        "weeks": 12
+      },
+      "focus": "glycemic",
+      "anomaly_pillars": [
+        "glycemic"
+      ],
+      "weeks": [
+        {
+          "week_index": 0,
+          "first_day": "2026-09-02",
+          "last_day": "2026-09-08",
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "week_index": 1,
+          "first_day": "2026-09-09",
+          "last_day": "2026-09-15",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 65.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "week_index": 2,
+          "first_day": "2026-09-16",
+          "last_day": "2026-09-22",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            },
+            "glycemic": {
+              "score": 74.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 62.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "week_index": 3,
+          "first_day": "2026-09-23",
+          "last_day": "2026-09-29",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            },
+            "glycemic": {
+              "score": 51.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 52.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "week_index": 4,
+          "first_day": "2026-09-30",
+          "last_day": "2026-10-01",
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            },
+            "glycemic": {
+              "score": 47.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 59.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "days": [
+        {
+          "date": "2026-09-02",
+          "synced": true,
+          "pillars": {
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-02"
+            }
+          }
+        },
+        {
+          "date": "2026-09-03",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-03"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-03"
+            }
+          }
+        },
+        {
+          "date": "2026-09-04",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-04"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            },
+            "recovery": {
+              "score": 75.0,
+              "band": "on-track",
+              "as_of": "2026-09-04"
+            }
+          }
+        },
+        {
+          "date": "2026-09-05",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 17.0,
+              "band": "off-track",
+              "as_of": "2026-09-05"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            },
+            "recovery": {
+              "score": 76.0,
+              "band": "on-track",
+              "as_of": "2026-09-05"
+            }
+          }
+        },
+        {
+          "date": "2026-09-06",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-06"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-06"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-06"
+            }
+          }
+        },
+        {
+          "date": "2026-09-07",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-07"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-07"
+            },
+            "recovery": {
+              "score": 72.0,
+              "band": "on-track",
+              "as_of": "2026-09-07"
+            }
+          }
+        },
+        {
+          "date": "2026-09-08",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-08"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            },
+            "recovery": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-08"
+            }
+          }
+        },
+        {
+          "date": "2026-09-09",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 25.0,
+              "band": "off-track",
+              "as_of": "2026-09-09"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            },
+            "recovery": {
+              "score": 71.0,
+              "band": "on-track",
+              "as_of": "2026-09-09"
+            }
+          }
+        },
+        {
+          "date": "2026-09-10",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 42.0,
+              "band": "off-track",
+              "as_of": "2026-09-10"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-10"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-10"
+            }
+          }
+        },
+        {
+          "date": "2026-09-11",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 42.0,
+              "band": "off-track",
+              "as_of": "2026-09-11"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            },
+            "recovery": {
+              "score": 73.0,
+              "band": "on-track",
+              "as_of": "2026-09-11"
+            }
+          }
+        },
+        {
+          "date": "2026-09-12",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 42.0,
+              "band": "off-track",
+              "as_of": "2026-09-12"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            },
+            "recovery": {
+              "score": 71.0,
+              "band": "on-track",
+              "as_of": "2026-09-12"
+            }
+          }
+        },
+        {
+          "date": "2026-09-13",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-13"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-13"
+            },
+            "recovery": {
+              "score": 66.0,
+              "band": "drifting",
+              "as_of": "2026-09-13"
+            }
+          }
+        },
+        {
+          "date": "2026-09-14",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-14"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-14"
+            },
+            "recovery": {
+              "score": 62.0,
+              "band": "drifting",
+              "as_of": "2026-09-14"
+            }
+          }
+        },
+        {
+          "date": "2026-09-15",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-15"
+            },
+            "recovery": {
+              "score": 65.0,
+              "band": "drifting",
+              "as_of": "2026-09-15"
+            }
+          }
+        },
+        {
+          "date": "2026-09-16",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-16"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-16"
+            },
+            "recovery": {
+              "score": 65.0,
+              "band": "drifting",
+              "as_of": "2026-09-16"
+            }
+          }
+        },
+        {
+          "date": "2026-09-17",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-17"
+            },
+            "glycemic": {
+              "score": 100.0,
+              "band": "on-track",
+              "as_of": "2026-09-17"
+            },
+            "recovery": {
+              "score": 64.0,
+              "band": "drifting",
+              "as_of": "2026-09-17"
+            }
+          }
+        },
+        {
+          "date": "2026-09-18",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-18"
+            },
+            "glycemic": {
+              "score": 95.0,
+              "band": "on-track",
+              "as_of": "2026-09-18"
+            },
+            "recovery": {
+              "score": 63.0,
+              "band": "drifting",
+              "as_of": "2026-09-18"
+            }
+          }
+        },
+        {
+          "date": "2026-09-19",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-19"
+            },
+            "glycemic": {
+              "score": 89.0,
+              "band": "on-track",
+              "as_of": "2026-09-19"
+            },
+            "recovery": {
+              "score": 62.0,
+              "band": "drifting",
+              "as_of": "2026-09-19"
+            }
+          }
+        },
+        {
+          "date": "2026-09-20",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-20"
+            },
+            "glycemic": {
+              "score": 83.0,
+              "band": "on-track",
+              "as_of": "2026-09-20"
+            },
+            "recovery": {
+              "score": 63.0,
+              "band": "drifting",
+              "as_of": "2026-09-20"
+            }
+          }
+        },
+        {
+          "date": "2026-09-21",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-21"
+            },
+            "glycemic": {
+              "score": 78.0,
+              "band": "on-track",
+              "as_of": "2026-09-21"
+            },
+            "recovery": {
+              "score": 58.0,
+              "band": "drifting",
+              "as_of": "2026-09-21"
+            }
+          }
+        },
+        {
+          "date": "2026-09-22",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            },
+            "glycemic": {
+              "score": 74.0,
+              "band": "on-track",
+              "as_of": "2026-09-22"
+            },
+            "recovery": {
+              "score": 62.0,
+              "band": "drifting",
+              "as_of": "2026-09-22"
+            }
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-23"
+            },
+            "glycemic": {
+              "score": 70.0,
+              "band": "on-track",
+              "as_of": "2026-09-23"
+            },
+            "recovery": {
+              "score": 67.0,
+              "band": "drifting",
+              "as_of": "2026-09-23"
+            }
+          }
+        },
+        {
+          "date": "2026-09-24",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-24"
+            },
+            "glycemic": {
+              "score": 66.0,
+              "band": "drifting",
+              "as_of": "2026-09-24"
+            },
+            "recovery": {
+              "score": 69.0,
+              "band": "drifting",
+              "as_of": "2026-09-24"
+            }
+          }
+        },
+        {
+          "date": "2026-09-25",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-25"
+            },
+            "glycemic": {
+              "score": 62.0,
+              "band": "drifting",
+              "as_of": "2026-09-25"
+            },
+            "recovery": {
+              "score": 64.0,
+              "band": "drifting",
+              "as_of": "2026-09-25"
+            }
+          }
+        },
+        {
+          "date": "2026-09-26",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-26"
+            },
+            "glycemic": {
+              "score": 59.0,
+              "band": "drifting",
+              "as_of": "2026-09-26"
+            },
+            "recovery": {
+              "score": 58.0,
+              "band": "drifting",
+              "as_of": "2026-09-26"
+            }
+          }
+        },
+        {
+          "date": "2026-09-27",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-27"
+            },
+            "glycemic": {
+              "score": 56.0,
+              "band": "drifting",
+              "as_of": "2026-09-27"
+            },
+            "recovery": {
+              "score": 54.0,
+              "band": "drifting",
+              "as_of": "2026-09-27"
+            }
+          }
+        },
+        {
+          "date": "2026-09-28",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-28"
+            },
+            "glycemic": {
+              "score": 54.0,
+              "band": "drifting",
+              "as_of": "2026-09-28"
+            },
+            "recovery": {
+              "score": 52.0,
+              "band": "drifting",
+              "as_of": "2026-09-28"
+            }
+          }
+        },
+        {
+          "date": "2026-09-29",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            },
+            "glycemic": {
+              "score": 51.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            },
+            "recovery": {
+              "score": 52.0,
+              "band": "drifting",
+              "as_of": "2026-09-29"
+            }
+          }
+        },
+        {
+          "date": "2026-09-30",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-09-30"
+            },
+            "glycemic": {
+              "score": 49.0,
+              "band": "off-track",
+              "as_of": "2026-09-30"
+            },
+            "recovery": {
+              "score": 57.0,
+              "band": "drifting",
+              "as_of": "2026-09-30"
+            }
+          }
+        },
+        {
+          "date": "2026-10-01",
+          "synced": true,
+          "pillars": {
+            "anabolic": {
+              "score": 50.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            },
+            "glycemic": {
+              "score": 47.0,
+              "band": "off-track",
+              "as_of": "2026-10-01"
+            },
+            "recovery": {
+              "score": 59.0,
+              "band": "drifting",
+              "as_of": "2026-10-01"
+            }
+          }
+        }
+      ],
+      "labels": {
+        "sleep": "adequate",
+        "recovery": "adequate",
+        "movement": "adequate",
+        "training": "adequate",
+        "glucose": "adequate"
+      },
+      "latest_insight": [
+        {
+          "family": "activity",
+          "kind": "activity.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "glucose",
+          "kind": "glucose.anomaly_flag",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "recovery",
+          "kind": "recovery.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "sleep",
+          "kind": "sleep.state_label",
+          "generated_at": "2026-10-01T20:00:00Z"
+        },
+        {
+          "family": "training",
+          "kind": "training.adherence",
+          "generated_at": "2026-10-01T20:00:00Z"
+        }
+      ],
+      "body_composition": {
+        "status": "tracking",
+        "band": "good",
+        "weight_direction": "down",
+        "lean_direction": "flat",
+        "lean_source": "measured",
+        "first_day": "2026-09-02",
+        "last_day": "2026-10-01"
+      },
+      "behaviour": {
+        "modality": "with-weights",
+        "logging": "every-day"
+      }
+    }
+  ]
+}
