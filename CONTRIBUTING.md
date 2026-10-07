@@ -17,9 +17,9 @@ repository, is welcome here too and is taken upstream.
 ## Change the kit
 
 - The source, the contract, the Pages function, the Compose file and the
-  example are the things here. The identity server is not; a change to what
-  the sandbox does is an upstream change and an issue here is the way to ask
-  for it.
+  example are the things here. The identity server is not, in code or as an
+  image; a change to what the sandbox does is an upstream change and an issue
+  here is the way to ask for it.
 - `source/source.js` is kept identical to the code that runs at
   `https://lifecare.id/sandbox-source`. A change there is proposed as an issue
   first.

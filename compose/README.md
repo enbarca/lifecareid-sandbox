@@ -1,54 +1,86 @@
-# Run the whole loop locally
+# Run the source locally
 
-Two containers: the LifeCare.ID® identity server in sandbox mode, from the
-published image, and the synthetic data source beside it. No account, no
-developer-access gate, no network beyond pulling the images.
+One container: the synthetic data source, on your machine, checking every
+token at the hosted sandbox, `https://sandbox.lifecare.id`. Identity, consent,
+tokens and the ledger stay at the hosted sandbox; there is no identity server
+in this kit and none to pull. What runs here is the code that runs at
+`https://lifecare.id/sandbox-source`, with your own client credentials in
+place of the hosted source's.
 
 ```bash
 cd compose
+cp .env.example .env     # then fill in the two values, as below
 docker compose up
-# sandbox:  http://localhost:8821
 # source:   http://localhost:8799/sandbox-source
+# sandbox:  https://sandbox.lifecare.id
 ```
 
-`docker compose down -v` resets the sandbox's state (clients, identities,
-grants, the ledger). The state is synthetic and disposable.
+## Before `docker compose up`: the source's own client
 
-## The image
+The source introspects every token at the sandbox, and the sandbox admits only
+an authenticated client there (RFC 7662, section 2.1): the hosted source
+presents its own client credentials, and so must yours. Any client the sandbox
+knows will do, including one you register yourself through the sandbox's
+self-service route. You need a developer access token for that:
+[app.lifecare.id/devaccess](https://app.lifecare.id/devaccess), your email,
+the terms, a magic link; the verify page shows the token.
 
-`ghcr.io/enbarca/lifecareid:sandbox` is the production lifecare.id binary; the
-`:sandbox` tag follows the latest published release and `:sandbox-<short sha>`
-names one exact build. There is no sandbox-specific build. The container is a
-sandbox because `LIFECAREID_SANDBOX=true` is in its environment, which opens
-the three self-service routes (`POST /v1/sandbox/clients`,
-`DELETE /v1/sandbox/clients/{client_id}`, `POST /v1/sandbox/test-identity`)
-that a production instance answers `404` to. Every other variable in
-`docker-compose.yml` has a comment saying what it is for.
+```bash
+DEVACCESS=...   # the token from https://app.lifecare.id/devaccess
+curl -s -X POST https://sandbox.lifecare.id/v1/sandbox/clients \
+  -H "Authorization: Bearer $DEVACCESS" -H "Content-Type: application/json" \
+  -d '{"name":"My local source","redirect_uris":["http://localhost:8799/callback"]}'
+# {"client_id":"sbx_...","client_secret":"...", ...}
+```
 
-## The walkthrough, against localhost
+Put the two values in `compose/.env` (git-ignored; `.env.example` is the
+template):
+
+```
+SOURCE_CLIENT_ID=sbx_...
+SOURCE_CLIENT_SECRET=...
+```
+
+Compose refuses to start without them, by design: a source without
+credentials reaches the sandbox, is refused there, and answers
+`503 source_not_authorized` to every read. The secret is shown once, at
+registration; lose it and register another client. The client is yours to
+delete, with its own credential:
+`curl -X DELETE https://sandbox.lifecare.id/v1/sandbox/clients/$SOURCE_CLIENT_ID -u "$SOURCE_CLIENT_ID:$SOURCE_CLIENT_SECRET" -b "lc_dev=$DEVACCESS"`.
+
+`GET http://localhost:8799/sandbox-source/` reports `configured: true` and
+`client_credentials: true` when both are in place. It never reports the
+values.
+
+## The walkthrough, with the source on localhost
 
 The same steps as the hosted walkthrough at
 [developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html),
-with no developer access token. The example client runs them in one go:
+with the two source reads going to your machine. The example client runs them
+in one go, with the same developer access token:
 
 ```bash
-SANDBOX=http://localhost:8821 SOURCE=http://localhost:8799/sandbox-source node ../examples/run-loop.mjs
+LIFECAREID_DEVACCESS_TOKEN=$DEVACCESS SOURCE=http://localhost:8799/sandbox-source node ../examples/run-loop.mjs
 ```
 
 By hand:
 
 ```bash
-SANDBOX=http://localhost:8821
+SANDBOX=https://sandbox.lifecare.id
 SOURCE=http://localhost:8799/sandbox-source
+DEVACCESS=...
 
-# 1. register a client
-curl -s -X POST "$SANDBOX/v1/sandbox/clients" -H "Content-Type: application/json" \
+# 1. register the app's client (not the source's: the app is the one the
+#    person grants access to)
+curl -s -X POST "$SANDBOX/v1/sandbox/clients" -H "Authorization: Bearer $DEVACCESS" \
+  -H "Content-Type: application/json" \
   -d '{"name":"Pilot agent","redirect_uris":["http://localhost:4000/callback"]}'
 CLIENT_ID=sbx_...        # client_id from the response
 
 # 2. mint a synthetic identity
-curl -s -X POST "$SANDBOX/v1/sandbox/test-identity" -H "Content-Type: application/json" -d '{}'
-DID=did:web:sandbox.local:u:...   # did from the response
+curl -s -X POST "$SANDBOX/v1/sandbox/test-identity" -H "Authorization: Bearer $DEVACCESS" \
+  -H "Content-Type: application/json" -d '{}'
+DID=did:web:...                   # did from the response
 SESSION=lcs_...                   # session_token from the response
 
 # 3. the synthetic person grants your client two scopes
@@ -64,7 +96,8 @@ curl -s -X POST "$SANDBOX/v1/token" -H "Authorization: Bearer $SESSION" \
   "subject_did":"'"$DID"'","scope":"recovery","purpose":"agent governance pilot","requester":"'"$CLIENT_ID"'"}'
 TOKEN=lc_...
 
-# 5. read over REST (introspected, recorded in the ledger, then served)
+# 5. read over REST, at your source (introspected at the sandbox, recorded in
+#    the ledger, then served)
 curl -s "$SOURCE/v1/source/recovery?owner=$DID" -H "Authorization: Bearer $TOKEN"
 
 # 6. read over MCP (the same handlers, the same record)
@@ -101,29 +134,31 @@ records nothing) and another person's DID as `owner` (`403 wrong_subject`).
 }
 ```
 
-## How the two containers are wired
+## How it is wired
 
-The source accepts a plain-http sandbox origin only on loopback (a rule in
-`source/source.js`, kept identical to the hosted code so the kit tests the code
-that runs in production). The `source` service therefore shares the `sandbox`
-container's network namespace (`network_mode: "service:sandbox"`), reaches the
-sandbox as `http://localhost:8810`, and has its own port published on the
-`sandbox` service. The source presents a client credential on every
-introspection, because the sandbox admits only an authenticated client there
-(RFC 7662, section 2.1): `LIFECAREID_SERVICE_CLIENTS` on the sandbox and the
-two `LIFECAREID_SANDBOX_SOURCE_CLIENT_*` variables on the source carry the same
-value. Its default is for this loopback sandbox only; a `.env` file beside
-`docker-compose.yml` with `SOURCE_CLIENT_SECRET=...` overrides it.
+The container runs `compose/source/server.mjs`, Node's http module in front of
+the same handlers the hosted Pages Function mounts, with the kit mounted
+read-only. It reads three variables: `LIFECAREID_SANDBOX_ORIGIN` (the hosted
+sandbox by default) and the two client credentials from `.env`. The source
+accepts an `https` origin, or plain `http` on loopback only; the hosted origin
+is `https`, so the rule in `source/source.js`, kept identical to the hosted
+code, holds without any network arrangement.
+
+Two things follow from checking tokens at the hosted sandbox. The hosted
+sandbox is gated: registering clients and minting identities take the
+developer access token, so the walkthrough above needs one even though the
+source is on your machine. And its rate limits apply: the sandbox limits token
+checks per calling address, so a burst of reads from your machine can answer
+`503 introspection_unavailable` for a while.
 
 ## Without Docker
 
-Run the source alone against any sandbox, hosted or local:
-
 ```bash
 LIFECAREID_SANDBOX_ORIGIN=https://sandbox.lifecare.id \
-LIFECAREID_SANDBOX_SOURCE_CLIENT_ID=... LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET=... \
+LIFECAREID_SANDBOX_SOURCE_CLIENT_ID=sbx_... LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET=... \
 node compose/source/server.mjs
+# sandbox source listening on http://0.0.0.0:8799/sandbox-source
 ```
 
-The credentials must belong to a client the sandbox knows: on the hosted
-sandbox, a client you registered with `POST /v1/sandbox/clients`.
+The origin has no default outside Compose: unset, every data route answers
+`503 source_not_configured`. Node 22 or newer, no dependencies.

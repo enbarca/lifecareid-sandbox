@@ -1,73 +1,29 @@
-# The LifeCare.ID® sandbox kit, run locally: the identity server in sandbox mode
-# and the synthetic data source beside it. Nothing here holds a person's data.
+# The LifeCare.ID® sandbox kit, run locally: the synthetic data source on your
+# machine, checking every token at the hosted sandbox. Nothing here holds a
+# person's data.
 #
 #   cd compose && docker compose up
-#   sandbox:  http://localhost:8821
 #   source:   http://localhost:8799/sandbox-source
+#   sandbox:  https://sandbox.lifecare.id   (hosted; identity, consent, tokens)
 #
-# The image is the production lifecare.id binary. LIFECAREID_SANDBOX=true at
-# runtime is what makes this container a sandbox: self-service client
-# registration and passkey-free test identities. No developer-access secret is
-# set, so this sandbox is open, which is right for one on your own machine and
-# for nothing else.
-#
-# Two secrets have "local only" defaults so that `docker compose up` works with
-# no setup. They protect nothing real (synthetic data, a loopback-only sandbox)
-# and must never be reused anywhere else. To override them, write a `.env`
-# file beside this one with SOURCE_CLIENT_SECRET and LOCAL_APP_CLIENT_SECRET.
+# There is no identity server in this file. Sandbox mode is a runtime flag on
+# the production binary, so an image of it would be the production identity
+# server, and none is published. The source introspects at the hosted sandbox
+# with its own client credentials, a client you register there yourself
+# (compose/README.md says how). Both values come from a `.env` file beside
+# this one; compose refuses to start without them rather than start a source
+# that answers 503 to every read.
 services:
-  sandbox:
-    image: ghcr.io/enbarca/lifecareid:sandbox
-    ports:
-      - "8821:8810"   # the sandbox (uvicorn listens on 8810 inside)
-      - "8799:8799"   # the source, which shares this container's network (below)
-    environment:
-      LIFECAREID_SANDBOX: "true"
-      LIFECAREID_STATE_DIR: /data
-      # The host segment of the synthetic DIDs: did:web:sandbox.local:u:<id>.
-      LIFECAREID_DOMAIN: sandbox.local
-      LIFECAREID_BASE_URL: http://localhost:8821
-      LIFECAREID_OIDC_ISSUER: http://localhost:8821
-      # Passkey ceremony settings. Unused by the test-identity path, set so a
-      # browser flow against a local app on :4000 would also work.
-      LIFECAREID_RP_ID: localhost
-      LIFECAREID_EXPECTED_ORIGIN: http://localhost:4000
-      # One fixed OAuth client for a local app ("Sign in with LifeCare.ID®").
-      # Sandbox-registered clients (POST /v1/sandbox/clients) need none of this.
-      LIFECAREID_OAUTH_CLIENT_ID: local-app
-      LIFECAREID_OAUTH_CLIENT_SECRET: ${LOCAL_APP_CLIENT_SECRET:-local-only-app-secret}
-      LIFECAREID_OAUTH_REDIRECT_URIS: http://localhost:4000/callback
-      # The source's own client at this sandbox: introspection admits only an
-      # authenticated client (RFC 7662 section 2.1). The same secret is handed
-      # to the source service below.
-      LIFECAREID_SERVICE_CLIENTS: sandbox-source=${SOURCE_CLIENT_SECRET:-local-only-source-secret}
-      # No mail sender: recovery links are printed to the container log.
-      LIFECAREID_EMAIL_SENDER: console
-      # Deliberately unset: LIFECAREID_DEVACCESS_SECRET (the instance stays open),
-      # LIFECAREID_REQUIRE_CALLER_AUTH and LIFECAREID_REQUIRE_GRANT_PROOF (default
-      # off, as the hosted sandbox runs them), LIFECAREID_RATE_LIMITS (off).
-    volumes:
-      - sandbox-state:/data
-
   source:
     image: node:22-alpine
-    # The source accepts a plain-http sandbox origin only on loopback (a rule in
-    # source.js, kept identical to the hosted code). Sharing the sandbox
-    # container's network namespace makes the sandbox reachable as localhost,
-    # so the rule holds; this is also why the source's port is published on the
-    # sandbox service above.
-    network_mode: "service:sandbox"
-    depends_on:
-      - sandbox
+    ports:
+      - "8799:8799"
     working_dir: /kit
     volumes:
       - ..:/kit:ro
     environment:
       PORT: "8799"
-      LIFECAREID_SANDBOX_ORIGIN: http://localhost:8810
-      LIFECAREID_SANDBOX_SOURCE_CLIENT_ID: sandbox-source
-      LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET: ${SOURCE_CLIENT_SECRET:-local-only-source-secret}
+      LIFECAREID_SANDBOX_ORIGIN: ${LIFECAREID_SANDBOX_ORIGIN:-https://sandbox.lifecare.id}
+      LIFECAREID_SANDBOX_SOURCE_CLIENT_ID: ${SOURCE_CLIENT_ID:?register a client at the sandbox and put its id in compose/.env (see compose/README.md)}
+      LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET: ${SOURCE_CLIENT_SECRET:?register a client at the sandbox and put its secret in compose/.env (see compose/README.md)}
     command: ["node", "compose/source/server.mjs"]
-
-volumes:
-  sandbox-state:

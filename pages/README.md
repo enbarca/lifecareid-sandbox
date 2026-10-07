@@ -20,7 +20,7 @@ holds `functions/`.
 
 | Variable | What it is | Where it is set |
 |---|---|---|
-| `LIFECAREID_SANDBOX_ORIGIN` | the sandbox the source introspects tokens at: `https://sandbox.lifecare.id`, or `http://localhost:<port>` for a sandbox run locally. No trailing path. Unset, every data route answers `503 source_not_configured` and nothing is served | a Pages variable (plain text is fine; it is public anyway) |
+| `LIFECAREID_SANDBOX_ORIGIN` | the sandbox the source introspects tokens at: `https://sandbox.lifecare.id`. No trailing path. (The code also accepts plain `http` on loopback, a rule kept identical to the hosted code for its own tests; it is not a second sandbox to run.) Unset, every data route answers `503 source_not_configured` and nothing is served | a Pages variable (plain text is fine; it is public anyway) |
 | `LIFECAREID_SANDBOX_SOURCE_CLIENT_ID` and `LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET` | the source's own client at the sandbox. Introspection admits only an authenticated client (RFC 7662, section 2.1), so without them the sandbox answers the source `401` and the source reports `503 source_not_authorized` | Pages **secrets**, both |
 
 ```bash

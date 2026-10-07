@@ -7,7 +7,8 @@
 //
 // Hosted:  LIFECAREID_DEVACCESS_TOKEN=... node examples/run-loop.mjs
 //          (the token from https://app.lifecare.id/devaccess)
-// Local:   SANDBOX=http://localhost:8821 SOURCE=http://localhost:8799/sandbox-source \
+// Local source (compose/), hosted sandbox:
+//          LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source \
 //          node examples/run-loop.mjs
 //
 // Prints statuses, the persona and the ledger line. It never prints a secret:

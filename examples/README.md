@@ -17,15 +17,19 @@ dependencies.
 LIFECAREID_DEVACCESS_TOKEN=... node examples/run-loop.mjs
 ```
 
-## Against a local sandbox
+## Against the source on your machine
 
-With `compose/` up (see [compose/README.md](../compose/README.md)):
+With `compose/` up (see [compose/README.md](../compose/README.md)), the same
+run with the source reads pointed at localhost. Identity, consent and tokens
+still come from the hosted sandbox, so the developer access token is still
+needed:
 
 ```bash
-SANDBOX=http://localhost:8821 SOURCE=http://localhost:8799/sandbox-source node examples/run-loop.mjs
+LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source node examples/run-loop.mjs
 ```
 
-A local sandbox has no gate, so no token.
+`SANDBOX` overrides the sandbox origin too (an `https` origin, or plain
+`http` on loopback), for anyone who operates a sandbox instance of their own.
 
 ## What it prints
 
