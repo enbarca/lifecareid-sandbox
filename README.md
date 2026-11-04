@@ -19,7 +19,8 @@ source must, before a real one is involved.
 | [`contract/`](contract/) | the public API contract (`openapi.json`, version in the README there) and `server.json` for the MCP Registry |
 | [`pages/`](pages/) | the reference deployment, a Cloudflare Pages Function, with the two project variables it reads and the rule for the one secret |
 | [`compose/`](compose/) | `docker compose up` runs the source on your machine, checking every token at the hosted sandbox with a client you registered there yourself |
-| [`examples/`](examples/) | one client that runs the full loop and checks every answer, against the hosted source or the one on your machine |
+| [`examples/`](examples/) | one client that runs the full loop and checks every answer, against the hosted source or the one on your machine; and, in `examples/person-managed-auth/`, one example per half of the library below |
+| [`lib/person-managed-auth/`](lib/person-managed-auth/) | person-managed authorization for agents and the servers they read from, draft 1: a client half that asks the person once, keeps the receipt and stops at the person's stop, and a server half that names the authorization server, checks the grant at every request and writes the receipt. LifeCare.ID® is its first implementation. Private and unpublished until the name is confirmed |
 
 ## What this is, and what it is not
 
@@ -164,10 +165,13 @@ folder.
 node --test
 ```
 
-Node 22 or newer, no dependencies. The source tests mock the sandbox and check
-what the source does with each answer it can get; the adapter tests check the
-local runtime and its metadata route; the brand test keeps the documents to the rules in
-[CONTRIBUTING.md](CONTRIBUTING.md).
+Node 22 or newer. The kit itself has no dependencies. The source tests mock the
+sandbox and check what the source does with each answer it can get; the adapter
+tests check the local runtime and its metadata route; the brand test keeps the
+documents to the rules in [CONTRIBUTING.md](CONTRIBUTING.md). The library's tests
+run the official MCP SDK, its one dependency; install it once with
+`npm ci --prefix lib/person-managed-auth`, and without it those tests skip with
+the line that says so.
 
 ## Links
 

@@ -16,7 +16,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Install the library's one dependency
+        run: npm ci --prefix lib/person-managed-auth
       - name: Syntax
-        run: node --check compose/source/server.mjs && node --check examples/run-loop.mjs && node --check scripts/sync-upstream.mjs
+        run: |
+          node --check compose/source/server.mjs
+          node --check examples/run-loop.mjs
+          node --check scripts/sync-upstream.mjs
+          for f in lib/person-managed-auth/src/*.js examples/person-managed-auth/*.mjs; do node --check "$f"; done
       - name: Tests
         run: node --test
