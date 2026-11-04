@@ -111,10 +111,14 @@ documentation. The same URL comes back in the challenge of a `401`: an MCP
 request with no token answers `WWW-Authenticate: Bearer resource_metadata="..."`,
 and a request with a token the sandbox refuses adds `error="invalid_token"`. A
 client that follows the MCP authorization specification is therefore led from
-the endpoint to the sandbox without being told. The example client does exactly
-this before it asks for anything: it sends one request with no token, reads
-the challenge, fetches the document, checks that `resource` is the endpoint it
-called, and takes the sandbox from `authorization_servers`.
+the endpoint to the sandbox without being told. The example client follows the
+same path before it asks for anything: it sends one request with no token,
+reads the challenge, fetches the document, checks that `resource` is the
+endpoint it called, and compares `authorization_servers` with the sandbox it
+will use. It never sends your developer access token to a server it was not
+told about: the token goes to `https://sandbox.lifecare.id` or to the origin
+you set as `SANDBOX`, and a source that names another sandbox stops the run
+before anything is sent.
 
 The source on your machine publishes its own document the same way, naming its
 own address as the resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as

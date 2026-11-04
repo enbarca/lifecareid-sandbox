@@ -3,8 +3,8 @@
 ## `openapi.json`
 
 The API of a LifeCare.ID® instance, as the hosted sandbox and production serve
-it. Fetched from `https://developers.lifecare.id/openapi.json` on 2026-10-06:
-**version 0.24.1**, 48 paths. It is a copy for convenience; the file at that
+it. Fetched from `https://developers.lifecare.id/openapi.json` on 2026-11-04:
+**version 0.25.0**, 48 paths. It is a copy for convenience; the file at that
 address is the authority, and this copy is refreshed when the kit is:
 
 ```bash

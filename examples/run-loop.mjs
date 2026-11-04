@@ -12,15 +12,19 @@
 //          LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source \
 //          node examples/run-loop.mjs
 //
-// SANDBOX, when set, is kept as given; the sandbox named by the source's own
-// metadata is used when it is not, and the run says whether the two agree.
+// The developer access token goes only to https://sandbox.lifecare.id (the
+// default) or to the SANDBOX you set, never to a server a source's metadata
+// names. The run discovers the issuer the source names and checks it: when it
+// agrees with the sandbox in use the run goes on; when it differs and SANDBOX is
+// not set, the run stops before it sends anything; when it differs and SANDBOX
+// is set, the run says so and keeps yours.
 //
 // Prints statuses, the persona and the ledger line. It never prints a secret:
 // not the developer access token, not the client secret, not the session, not
 // the data-access token. Exit code 0 when every step answered as the contract
 // says, 1 otherwise. Node 22 or newer, no dependencies.
 const SANDBOX_GIVEN = (process.env.SANDBOX || "").replace(/\/+$/, "");
-let SANDBOX = SANDBOX_GIVEN || "https://sandbox.lifecare.id";
+const SANDBOX = SANDBOX_GIVEN || "https://sandbox.lifecare.id";
 const SOURCE = (process.env.SOURCE || "https://lifecare.id/sandbox-source").replace(/\/+$/, "");
 const DEVACCESS = process.env.LIFECAREID_DEVACCESS_TOKEN || "";
 // Add " persona:<id>" (for example persona:p5-glucose-anomaly) to pin a persona.
@@ -56,21 +60,16 @@ function challengeParams(res) {
   return Object.fromEntries([...header.matchAll(/([a-z_]+)="([^"]*)"/g)].map((m) => [m[1], m[2]]));
 }
 
-const trusted = (origin) => {
-  try {
-    const u = new URL(origin);
-    return u.protocol === "https:" || (u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname));
-  } catch (_) { return false; }
-};
-
 const mcpCall = (name, args) => ({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } });
 
 console.log(`source  ${SOURCE}\n`);
 
 // 0. discovery: ask the MCP endpoint with no token, read the challenge, fetch the
-//    protected resource metadata it names, and take the sandbox from there. This
-//    is the path a client that follows the MCP authorization specification takes
-//    from the endpoint to the sandbox without being told.
+//    protected resource metadata it names, and check the sandbox it names against
+//    the one this run will use. A client that follows the MCP authorization
+//    specification takes this path from the endpoint to the sandbox; this one
+//    checks the answer and never sends the developer access token to a server it
+//    was not told about.
 const unauthenticated = await call("POST", `${SOURCE}/mcp`, {
   body: { jsonrpc: "2.0", id: 0, method: "tools/list" },
 });
@@ -93,14 +92,14 @@ if (metadataUrl) {
     console.log("ok   resource matches the endpoint called");
   }
   const discovered = (metadata.json?.authorization_servers?.[0] || "").replace(/\/+$/, "");
-  if (!discovered || !trusted(discovered)) {
+  if (!discovered) {
     failed = true;
-    console.log("FAIL the metadata names no usable authorization server (https, or http on loopback)");
+    console.log("FAIL the metadata names no authorization server");
+  } else if (discovered === SANDBOX) {
+    console.log(`ok   sandbox ${SANDBOX} (${SANDBOX_GIVEN ? "given" : "default"}; the metadata agrees)`);
   } else if (!SANDBOX_GIVEN) {
-    SANDBOX = discovered;
-    console.log(`ok   sandbox ${SANDBOX} (from the metadata)`);
-  } else if (discovered === SANDBOX_GIVEN) {
-    console.log(`ok   sandbox ${SANDBOX} (given; the metadata agrees)`);
+    console.log(`FAIL the source names sandbox ${discovered}; this run sends your developer access token only to ${SANDBOX} or to SANDBOX. Set SANDBOX=${discovered} if you trust it`);
+    process.exit(1);
   } else {
     console.log(`note sandbox ${SANDBOX} (given; the metadata names ${discovered}, kept the one given)`);
   }
