@@ -90,7 +90,8 @@ function getTheCallbackFromThePerson(authorizeUrl) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const url = new URL(req.url, "http://127.0.0.1:4000");
-      if (url.pathname !== "/callback") { res.statusCode = 404; return res.end(); }
+      if (url.pathname !== "/callback") { res.writeHead(404, { connection: "close" }); return res.end(); }
+      res.writeHead(200, { connection: "close" });   // so a keep-alive client cannot reuse a closed listener
       res.end("You can close this tab.");
       server.close();
       resolve(url.href);
@@ -291,7 +292,7 @@ Apache-2.0, with the kit's NOTICE. One dependency, the official
 `@modelcontextprotocol/sdk` 1.32.2 (MIT), used by the client half only; the
 server half needs none. Its own dependencies are MIT, ISC, BSD-2-Clause and
 BSD-3-Clause. Nothing in the library or the SDK's client path phones home. The
-package is private and unpublished; the name is confirmed at publication.
+package is not yet published; the name is confirmed at publication.
 
 LifeCare.ID® is a registered trademark of Enbarca Inc dba HCVC.net and is not
 licensed by the Apache License.

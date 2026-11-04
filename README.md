@@ -20,7 +20,7 @@ source must, before a real one is involved.
 | [`pages/`](pages/) | the reference deployment, a Cloudflare Pages Function, with the two project variables it reads and the rule for the one secret |
 | [`compose/`](compose/) | `docker compose up` runs the source on your machine, checking every token at the hosted sandbox with a client you registered there yourself |
 | [`examples/`](examples/) | one client that runs the full loop and checks every answer, against the hosted source or the one on your machine; and, in `examples/person-managed-auth/`, one example per half of the library below |
-| [`lib/person-managed-auth/`](lib/person-managed-auth/) | person-managed authorization for agents and the servers they read from, draft 1: a client half that asks the person once, keeps the receipt and stops at the person's stop, and a server half that names the authorization server, checks the grant at every request and writes the receipt. LifeCare.ID® is its first implementation. Private and unpublished until the name is confirmed |
+| [`lib/person-managed-auth/`](lib/person-managed-auth/) | person-managed authorization for agents and the servers they read from, draft 1: a client half that asks the person once, keeps the receipt and stops at the person's stop, and a server half that names the authorization server, checks the grant at every request and writes the receipt. LifeCare.ID® is its first implementation. Not yet published; the name is confirmed at publication |
 
 ## What this is, and what it is not
 
