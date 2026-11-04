@@ -1,5 +1,5 @@
 {
-  "about": "Maps upstream files in the lifecareid checkout to this kit. Read by scripts/sync-upstream.mjs. Substitutions are literal and counted: a substitution that does not match exactly the stated number of times stops the sync. The script holds the allow-list of upstream directories itself.",
+  "about": "Maps upstream files in the lifecareid checkout to this kit. Read by scripts/sync-upstream.mjs. Substitutions are literal and counted: a substitution that does not match exactly the stated number of times stops the sync. The script holds the allow-list of upstream directories itself. The private names list is not held here: the script reads the program's names file from --names-file or NAMES_GATE_FILE and refuses to run without it.",
   "files": [
     {
       "from": "libs/sandbox-source/source.js",
@@ -142,14 +142,5 @@
       "line": "Copy in this folder: **version {version}**, {paths} paths, taken from the upstream contract at commit `{short}` of {date}."
     }
   },
-  "upstream_file": "sync/UPSTREAM",
-  "private_names": {
-    "about": "Refusal list. Each entry is the length and the SHA-256 of one lower-cased private name, so this public file does not carry the name. The script hashes every window of that length in each upstream line (case-insensitive) and refuses the sync on a match, naming the file and line and never the name.",
-    "entries": [
-      {
-        "length": 7,
-        "sha256": "255dab90d22ee447881d530fed9a328408d22618ca2fcbba373caf05996eacf8"
-      }
-    ]
-  }
+  "upstream_file": "sync/UPSTREAM"
 }

@@ -138,9 +138,15 @@ become the kit's), and writes the kit files. The commit it synced from is
 written to `sync/UPSTREAM`: the full commit and its date.
 
 ```bash
-node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit>
-node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --check
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --names-file /path/to/names.txt
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --names-file /path/to/names.txt --check
 ```
+
+The names file is the program's private names list, one name per line, the
+same file its own names gate reads; `NAMES_GATE_FILE` can name it instead of
+the flag. This repository holds no names, and the script has no default path:
+with no list it exits 1 without reading or writing anything, in both forms. A
+maintainer passes the list; a contributor without it cannot run a sync.
 
 The second form writes the same files to a temporary directory and diffs them
 against this working tree: exit 0 when they are identical, exit 1 with the
@@ -148,8 +154,9 @@ diff when they are not. Run it to see drift, or to verify a sync. It needs the
 private checkout, so it does not run in this repository's CI. The script
 reads only from that commit (never from the checkout's working tree), reads
 only four upstream directories, fetches nothing, and refuses to write when an
-upstream file carries a name on the private list in the map, naming the file
-and line.
+upstream file carries a name on the list, naming the file and line and never
+the name. It also refuses to write through a symbolic link or into any `.git`
+folder.
 
 ## Tests
 

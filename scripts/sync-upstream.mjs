@@ -2,8 +2,13 @@
 // Brings the files this kit mirrors in step with their source of truth, a
 // local lifecareid checkout, at a commit you name.
 //
-//   node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit>
-//   node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit> --check
+//   node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit> --names-file <list>
+//   node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit> --names-file <list> --check
+//
+// <list> is the program's private names list (one name per line, # comments),
+// the file its names gate reads; NAMES_GATE_FILE names it when the flag is not
+// given. This kit holds no names and the script has no default path: with no
+// list the script refuses, in both forms.
 //
 // The first form writes the kit files. The second writes the same files into a
 // temporary directory and diffs them against this working tree: exit 0 when
@@ -19,7 +24,6 @@
 // Node 22, no dependencies. Needs the private checkout, so it is a maintainer's
 // tool and is not run in CI.
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import {
   existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync,
 } from "node:fs";
@@ -38,7 +42,8 @@ class SyncError extends Error {}
 const fail = (message) => { throw new SyncError(message); };
 
 function usage() {
-  return "usage: node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit> [--check]";
+  return "usage: node scripts/sync-upstream.mjs --from <lifecareid checkout> --ref <commit> [--names-file <list>] [--check]\n" +
+    "the private names list comes from --names-file or the NAMES_GATE_FILE environment variable";
 }
 
 function parseArgs(argv) {
@@ -46,7 +51,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--check") args.check = true;
-    else if (a === "--from" || a === "--ref") {
+    else if (a === "--from" || a === "--ref" || a === "--names-file") {
       const value = argv[i + 1];
       if (value === undefined || value.startsWith("--")) fail(`${a} needs a value\n${usage()}`);
       args[a.slice(2)] = value;
@@ -54,6 +59,8 @@ function parseArgs(argv) {
     } else fail(`unknown argument ${JSON.stringify(a)}\n${usage()}`);
   }
   if (!args.from || !args.ref) fail(usage());
+  args.namesFile = args["names-file"] || process.env.NAMES_GATE_FILE;
+  if (!args.namesFile) fail(`no private names list given: pass --names-file <list> or set NAMES_GATE_FILE; nothing was read or written\n${usage()}`);
   return args;
 }
 
@@ -92,8 +99,9 @@ function checkUpstreamPath(path) {
 
 function checkKitPath(path) {
   const clean = posix.normalize(path);
-  if (clean !== path || path.startsWith("/") || path.split("/").includes("..") || path.startsWith(".git/")) {
-    fail(`kit path ${JSON.stringify(path)} is not a plain relative path inside the kit`);
+  const parts = path.split("/");
+  if (clean !== path || path.startsWith("/") || parts.includes("..") || parts.some((c) => c.toLowerCase() === ".git")) {
+    fail(`kit path ${JSON.stringify(path)} is not a plain relative path inside the kit (no .git component in any letter case)`);
   }
 }
 
@@ -116,21 +124,29 @@ function readUpstream(from, sha, path) {
 
 // ------------------------------------------------------ the private-name gate
 
-// Returns the 1-based line numbers of `text` that hold a listed name. Entries
-// are {length, sha256} of the lower-cased name; every window of that length in
-// a line is hashed, so a match is a substring match, as the names gate does.
-function privateNameLines(text, entries) {
+// The list is the program's own names file: one name per line, `#` comments,
+// names shorter than four characters ignored, as its names gate reads it.
+function loadNames(file) {
+  let text;
+  try {
+    text = readFileSync(file, "utf8");
+  } catch (e) {
+    fail(`cannot read the private names list ${JSON.stringify(file)}: ${e.code || e.message}`);
+  }
+  const names = text.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#") && l.length >= 4)
+    .map((l) => l.toLowerCase());
+  if (!names.length) fail(`the private names list ${JSON.stringify(file)} holds no names; refusing to sync without a gate`);
+  return names;
+}
+
+// Returns the 1-based line numbers of `text` that hold a listed name
+// (case-insensitive substring, as the names gate matches).
+function privateNameLines(text, names) {
   const hits = [];
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i].toLowerCase();
-    let hit = false;
-    for (const { length, sha256 } of entries) {
-      for (let start = 0; !hit && start + length <= line.length; start += 1) {
-        hit = createHash("sha256").update(line.slice(start, start + length)).digest("hex") === sha256;
-      }
-    }
-    if (hit) hits.push(i + 1);
+    if (names.some((n) => line.includes(n))) hits.push(i + 1);
   }
   return hits;
 }
@@ -157,10 +173,9 @@ function substitute(text, replacements, label) {
 
 // Builds { kit path: content } for every file the sync owns, in memory. Nothing
 // is written until every file has passed the gate.
-function build({ from, sha, date, map }) {
+function build({ from, sha, date, map, names }) {
   const out = new Map();
   const refused = [];
-  const names = map.private_names.entries;
 
   const take = (upstreamPath) => {
     const text = readUpstream(from, sha, upstreamPath);
@@ -204,7 +219,28 @@ function build({ from, sha, date, map }) {
   return out;
 }
 
+// Refuses a symlink in any component of `rel` below `root`, the file included.
+// A component that does not exist yet cannot be a link, and ends the walk.
+function assertNoSymlink(root, rel) {
+  let current = root;
+  for (const part of rel.split("/")) {
+    current = join(current, part);
+    let st;
+    try {
+      st = lstatSync(current);
+    } catch (e) {
+      if (e.code === "ENOENT") return;
+      throw e;
+    }
+    if (st.isSymbolicLink()) fail(`refused: ${current} is a symbolic link; nothing is written through a link`);
+  }
+}
+
 function writeTree(root, files) {
+  for (const rel of files.keys()) {
+    checkKitPath(rel);
+    assertNoSymlink(root, rel);
+  }
   for (const [rel, content] of files) {
     const target = join(root, ...rel.split("/"));
     if (existsSync(target) && readFileSync(target, "utf8") === content) continue;
@@ -240,7 +276,8 @@ function main() {
   if (resolve(from) === KIT_ROOT || from.startsWith(KIT_ROOT + sep)) fail("--from must be the lifecareid checkout, not this kit");
   const { sha, date } = resolveCommit(from, args.ref);
   const map = loadMap();
-  const files = build({ from, sha, date, map });
+  const names = loadNames(resolve(args.namesFile));
+  const files = build({ from, sha, date, map, names });
 
   if (!args.check) {
     writeTree(KIT_ROOT, files);
@@ -250,6 +287,7 @@ function main() {
 
   const tmp = checkDir();
   const tree = join(tmp, "tree");
+  assertNoSymlink(tmp, "tree");
   mkdirSync(tree, { recursive: true });
   writeTree(tree, files);
   let drift = 0;
