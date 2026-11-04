@@ -4,7 +4,10 @@
 each answer against the contract: discovery, register, mint, grant, token, REST read, a
 refused read of an ungranted scope, MCP read, ledger, revoke, the replay of the
 revoked token on both faces, and the client's deletion. Node 22 or newer, no
-dependencies.
+dependencies. It uses the sandbox's API path (a grant and a token made with a
+synthetic person's session), for scripts and CI with no browser; the token it
+gets carries no audience. The agent flow a real client runs, the authorization
+code flow, is in [`person-managed-auth/`](person-managed-auth/).
 
 ## Against the hosted sandbox
 
@@ -48,8 +51,10 @@ not set, the run stops with exit 1 before it sends anything, and tells you the
 origin to set as `SANDBOX` if you trust it. When `SANDBOX` is set and the
 document names another, the run says so and keeps the one you set. The sandbox
 registration, the synthetic person, the grant and the token that follow are
-unchanged; the authorization code flow a client would run against that sandbox
-is not in this example.
+unchanged. The authorization code flow a client runs against that sandbox is
+not in this example. It is in
+[`person-managed-auth/agent.mjs`](person-managed-auth/agent.mjs) and described
+at [developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source#discovery).
 
 ## What it prints
 

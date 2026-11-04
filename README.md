@@ -63,6 +63,30 @@ LIFECAREID_DEVACCESS_TOKEN=... node examples/run-loop.mjs
 The same steps as copy-and-paste `curl` are the walkthrough at
 [developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source).
 
+### The agent flow, in five minutes
+
+The loop above is the sandbox's API path, for scripts and CI that have no
+browser. A real agent takes the authorization code flow instead, and the
+library in [`lib/person-managed-auth/`](lib/person-managed-auth/) implements
+both halves of it. With the developer access token from step 1 of the hosted
+quick start:
+
+```bash
+npm ci --prefix lib/person-managed-auth    # once: installs the MCP SDK, the library's one dependency
+LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/agent.mjs
+LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/server.mjs
+```
+
+`agent.mjs` is the client half: an agent is led from the hosted source's `401`
+to the sandbox, stops at the person, reads under the grant, shows the receipt,
+steps up to a second scope and stops when the person revokes. `server.mjs` is
+the server half: a small MCP server on your machine, registered with the
+sandbox as a resource, walked through the same flow. Each takes about five
+seconds of machine time against the hosted sandbox (measured 2026-11-04) and
+deletes the clients it registered. A synthetic person's session stands in for
+the passkey tap; [examples/person-managed-auth/README.md](examples/person-managed-auth/README.md)
+says exactly where.
+
 ### The source on your machine
 
 The same loop, with the two source reads going to a source you run. It checks
@@ -77,19 +101,42 @@ LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source node 
 ```
 
 [compose/README.md](compose/README.md) has the registration step, the
-walkthrough by hand and how the container is wired.
+walkthrough by hand, the authorization code flow against your source and how
+the container is wired.
+
+Status of the copies. The `source/` copy in this kit is version 0.3.0, synced
+from the LifeCare.ID® repository on 2026-11-04 (`sync/UPSTREAM`). The hosted
+source is 0.3.1, which adds one response header,
+`Access-Control-Expose-Headers: www-authenticate, mcp-session-id, mcp-protocol-version`,
+so that a page on another origin can read the challenge. The source on your
+machine does not send it until the next sync, so a browser page reading its
+`401` sees `null` for `WWW-Authenticate`; a client outside a browser is
+unaffected, and everything else described here is the same on both. The
+`contract/` copy is 0.26.0 against the hosted 0.27.0, whose published file
+differs from it by the version number only.
 
 ## Try to break it
 
-The source is published so that people can test it, not only use it. Two
+The source is published so that people can test it, not only use it. Three
 things worth trying first:
 
 - **Read a scope you were not granted.** Hold a token for `recovery` and ask
-  for `cgm`. The contract says `403 insufficient_scope`, and nothing is written
-  to the ledger.
+  for `cgm`. Over REST the contract says `403 insufficient_scope`. Over MCP, a
+  single `tools/call` for a scope the token does not cover is refused at the
+  transport: HTTP `403` with `WWW-Authenticate: Bearer error="insufficient_scope", scope="cgm", resource_metadata="..."`,
+  so a client that follows the MCP authorization specification can step up to
+  the scope named (source 0.3.0 and later, which this kit holds). Inside a
+  JSON-RPC batch the same refusal stays a tool error. Nothing is written to the
+  ledger either way.
 - **Replay a revoked token.** Revoke the grant and present the same token
   again, over REST and over any MCP method, `initialize` and `tools/list`
   included. The contract says `401 invalid_token`, on the very next call.
+- **Present a token issued for another resource.** A token from the
+  authorization code flow carries `aud`, the resource it was issued for. Get
+  one for your local source ([compose/README.md](compose/README.md) shows how)
+  and present it to the hosted source: `401 invalid_token`, "the token was
+  issued for another resource", and nothing is written to the ledger. A token
+  from the walkthrough's API path carries no `aud` and is accepted.
 
 Found a hole, in the source or in what the sandbox lets it do? Open an issue
 here with the request shape and the response. Leave the token out. A finding
@@ -97,8 +144,16 @@ in the identity server is handled from here too; it moves upstream.
 
 ## Discovery
 
-A client does not have to be told where the sandbox is. The source publishes
-OAuth 2.0 protected resource metadata (RFC 9728) for its MCP endpoint, at
+Everything in this kit follows one flow, person-managed authorization: the
+person, not the agent or the server, decides what an agent may read, and can end
+it at any time, through the OAuth flow the MCP authorization specification
+describes. LifeCare.ID® is its first implementation, and
+[`lib/person-managed-auth/`](lib/person-managed-auth/) is the library for both
+halves. Discovery is its first step: a client does not have to be told where the
+sandbox is.
+
+The source publishes OAuth 2.0 protected resource metadata (RFC 9728) for its
+MCP endpoint, at
 `/.well-known/oauth-protected-resource/sandbox-source/mcp` on the host that
 serves it, so on the hosted source:
 
@@ -111,9 +166,9 @@ tokens (`authorization_servers`), the scopes the source understands and the
 documentation. The same URL comes back in the challenge of a `401`: an MCP
 request with no token answers `WWW-Authenticate: Bearer resource_metadata="...", scope="daily"`,
 naming the one scope to ask for, and a request with a token the sandbox refuses
-adds `error="invalid_token"` and no scope. A
-client that follows the MCP authorization specification is therefore led from
-the endpoint to the sandbox without being told. The example client follows the
+adds `error="invalid_token"` and no scope. A client that follows the MCP
+authorization specification is therefore led from the endpoint to the sandbox
+without being told. The example client follows the
 same path before it asks for anything: it sends one request with no token,
 reads the challenge, fetches the document, checks that `resource` is the
 endpoint it called, and compares `authorization_servers` with the sandbox it
@@ -122,9 +177,17 @@ told about: the token goes to `https://sandbox.lifecare.id` or to the origin
 you set as `SANDBOX`, and a source that names another sandbox stops the run
 before anything is sent.
 
+From there the client runs the authorization code flow with a client you
+registered (one scope, PKCE, the resource), and the person answers on the
+sandbox's own origin, not in the agent:
+[sandbox data source, Discovery](https://developers.lifecare.id/sandbox-data-source#discovery).
+It is runnable as `examples/person-managed-auth/agent.mjs`, and the library
+README has the redirect receiver a real agent needs.
+
 The source on your machine publishes its own document the same way, naming its
 own address as the resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as
-the authorization server. The words are in the
+the authorization server; [compose/README.md](compose/README.md) runs the
+authorization code flow against it. The words are in the
 [sandbox data source reference](https://developers.lifecare.id/sandbox-data-source).
 
 ## Keeping in step with upstream

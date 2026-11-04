@@ -120,6 +120,42 @@ Two refusals worth provoking on purpose: a scope the token does not cover
 (`GET $SOURCE/v1/source/cgm?owner=$DID` answers `403 insufficient_scope` and
 records nothing) and another person's DID as `owner` (`403 wrong_subject`).
 
+## The authorization code flow against your source
+
+The walkthrough above is the sandbox's API path: its token carries no audience.
+An agent that follows the standard takes the authorization code flow, and its
+token is bound to the resource it asked for, so your source's address has to be
+a resource of the client. Register it on the agent's client with `resources`
+(live on the hosted sandbox since 2026-11-04, contract 0.27.0), with the
+redirect URI the agent will use:
+
+```bash
+curl -s -X POST https://sandbox.lifecare.id/v1/sandbox/clients \
+  -H "Authorization: Bearer $DEVACCESS" -H "Content-Type: application/json" \
+  -d '{"name":"My agent","redirect_uris":["http://127.0.0.1:4000/callback"],"resources":["http://localhost:8799/sandbox-source/mcp"]}'
+# {"client_id":"sbx_...","client_secret":"...","redirect_uris":[...],"resources":["http://localhost:8799/sandbox-source/mcp"], ...}
+```
+
+The source on your machine checks a token's audience against exactly the string
+its own metadata names as `resource`, built from the host the caller used, so
+register the one you will call. `http://localhost:8799/sandbox-source/mcp` is
+not `http://127.0.0.1:8799/sandbox-source/mcp`, and the sandbox compares what you
+registered byte for byte: a client that asks for the other spelling is refused
+at `/authorize` with `invalid_target`. Read the string back from your source:
+
+```bash
+curl -s http://localhost:8799/.well-known/oauth-protected-resource/sandbox-source/mcp
+```
+
+Then point the library's client half at it, with `resource` set to that
+string, as in [lib/person-managed-auth/README.md](../lib/person-managed-auth/README.md)
+(its redirect receiver included). The person's yes happens at the hosted
+sandbox; the token comes back with your source's address as its `aud`, and your
+source accepts it. Only your own clients can ask for the resource (another developer's
+clients get `invalid_target`), and a client registered before 2026-11-04 cannot
+hold one: register a new client. The same token presented to the hosted source is refused with
+`401 invalid_token`, because it was issued for another resource.
+
 ## Its own discovery document
 
 The server also answers `/.well-known/oauth-protected-resource/sandbox-source/mcp`,
@@ -149,7 +185,14 @@ transport, not inside the tool result: HTTP `403` with `{detail, error}` as the
 body and `WWW-Authenticate: Bearer error="insufficient_scope", scope="<the scope asked for>", resource_metadata="..."`,
 so a client that follows the MCP authorization specification can step up to the
 scope named; inside a JSON-RPC batch the same refusal stays a tool error, and
-nothing is written to the ledger either way.
+nothing is written to the ledger either way. This is in the copy of the source
+here (version 0.3.0).
+
+One thing the hosted source (0.3.1) does that this copy does not yet: it exposes
+`www-authenticate`, `mcp-session-id` and `mcp-protocol-version` to pages on other
+origins (`Access-Control-Expose-Headers`). Until the next sync, a browser page
+that calls your local source sees `null` for `WWW-Authenticate`; a client
+outside a browser reads it as described.
 
 ## How it is wired
 

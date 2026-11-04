@@ -8,6 +8,10 @@ it. It is a copy for convenience; the file at
 
 Copy in this folder: **version 0.26.0**, 48 paths, taken from the upstream contract at commit `d695a3c2ab99` of 2026-11-04.
 
+The hosted contract is 0.27.0, and its published file differs from this copy by
+the version number only (the sandbox-only routes are not in it); the next sync
+brings the line above up to date.
+
 The copy is refreshed when the kit is. A maintainer with the lifecareid checkout
 runs `scripts/sync-upstream.mjs`, which copies the contract at the commit it
 syncs from and rewrites the line above (see "Keeping in step with upstream" in
@@ -19,9 +23,12 @@ curl -sS https://developers.lifecare.id/openapi.json -o contract/openapi.json
 python3 -c 'import json; print(json.load(open("contract/openapi.json"))["info"]["version"])'
 ```
 
-The three sandbox-only routes (`POST /v1/sandbox/clients`,
-`DELETE /v1/sandbox/clients/{client_id}`, `POST /v1/sandbox/test-identity`) are
-not in the contract: a production instance answers them `404`. They are
+The four sandbox-only routes (`POST /v1/sandbox/clients`,
+`GET /v1/sandbox/clients/{client_id}`, `DELETE /v1/sandbox/clients/{client_id}`,
+`POST /v1/sandbox/test-identity`) are not in the contract: a production instance
+answers them `404`. Since 2026-11-04 (hosted 0.27.0) the `POST` takes
+`resources`, one to five addresses of your own servers that a token may be
+issued for. They are
 documented at
 [developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox).
 The source's own routes (`/sandbox-source/...`) are not in it either, nor is
