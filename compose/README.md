@@ -55,7 +55,7 @@ values.
 ## The walkthrough, with the source on localhost
 
 The same steps as the hosted walkthrough at
-[developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html),
+[developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source),
 with the two source reads going to your machine. The example client runs them
 in one go, with the same developer access token:
 
@@ -120,6 +120,16 @@ Two refusals worth provoking on purpose: a scope the token does not cover
 (`GET $SOURCE/v1/source/cgm?owner=$DID` answers `403 insufficient_scope` and
 records nothing) and another person's DID as `owner` (`403 wrong_subject`).
 
+## Its own discovery document
+
+The server also answers `/.well-known/oauth-protected-resource/sandbox-source/mcp`,
+the OAuth protected resource metadata (RFC 9728) the hosted source publishes,
+naming your address (`http://localhost:8799/sandbox-source/mcp`) as the
+resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as the authorization
+server. The `401` for an MCP request with no token points to it in
+`WWW-Authenticate`, so a client that follows the MCP authorization
+specification finds the sandbox from your source alone.
+
 ## Point an MCP client at it
 
 ```json
@@ -138,7 +148,8 @@ records nothing) and another person's DID as `owner` (`403 wrong_subject`).
 
 The container runs `compose/source/server.mjs`, Node's http module in front of
 the same handlers the hosted Pages Function mounts, with the kit mounted
-read-only. It reads three variables: `LIFECAREID_SANDBOX_ORIGIN` (the hosted
+read-only. Besides the source it routes the well-known path above to the
+metadata handler, as the hosted site mounts it. It reads three variables: `LIFECAREID_SANDBOX_ORIGIN` (the hosted
 sandbox by default) and the two client credentials from `.env`. The source
 accepts an `https` origin, or plain `http` on loopback only; the hosted origin
 is `https`, so the rule in `source/source.js`, kept identical to the hosted

@@ -4,7 +4,11 @@
 // Pages runtime. This file gives the same handlers a runtime on your machine:
 // Node's http module turns each incoming request into a web Request, hands it
 // to handleRequest exactly as the Pages function does, and writes the Response
-// back. No behaviour lives here.
+// back. No behaviour lives here. One route is added beside the source, the one
+// the Pages site mounts as a second function: /.well-known/oauth-protected-resource/...
+// goes to handleProtectedResourceMetadata, so a source run here publishes its own
+// metadata (RFC 9728), naming this address as the resource and the sandbox in
+// LIFECAREID_SANDBOX_ORIGIN as the authorization server.
 //
 // Environment, the same three variables the Pages function reads:
 //   LIFECAREID_SANDBOX_ORIGIN                the sandbox to introspect tokens at
@@ -15,7 +19,12 @@ import http from "node:http";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 
-import { PREFIX, handleRequest } from "../../source/source.js";
+import {
+  PREFIX,
+  WELL_KNOWN_PRM,
+  handleProtectedResourceMetadata,
+  handleRequest,
+} from "../../source/source.js";
 
 const PORT = Number(process.env.PORT || 8799);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -60,9 +69,19 @@ export async function writeResponse(response, res) {
   res.end(response.body ? Buffer.from(await response.arrayBuffer()) : undefined);
 }
 
+// The two mounts the Pages site has, as one function: the metadata route, and
+// everything else to the source (which answers its own 404 outside its prefix).
+export function route(request, env) {
+  const { pathname } = new URL(request.url);
+  if (pathname === WELL_KNOWN_PRM || pathname.startsWith(WELL_KNOWN_PRM + "/")) {
+    return handleProtectedResourceMetadata(request, env);
+  }
+  return handleRequest(request, env);
+}
+
 export async function handle(req, res, env) {
   try {
-    await writeResponse(await handleRequest(toRequest(req), env), res);
+    await writeResponse(await route(toRequest(req), env), res);
   } catch (_) {
     res.statusCode = 500;
     res.setHeader("content-type", "application/json");

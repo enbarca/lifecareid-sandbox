@@ -105,3 +105,33 @@ test("refusals keep their status and headers", async () => {
   assert.equal((await revoked.json()).error, "invalid_token");
   assert.equal((await realFetch(`http://127.0.0.1:${server.address().port}/elsewhere`)).status, 404);
 });
+
+test("the well-known path answers the RFC 9728 document, naming this address and the sandbox", async () => {
+  sandbox();
+  const res = await realFetch(`http://127.0.0.1:${server.address().port}/.well-known/oauth-protected-resource/sandbox-source/mcp`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type"), /^application\/json/);
+  assert.equal(res.headers.get("access-control-allow-origin"), "*");
+  const body = await res.json();
+  assert.equal(body.resource, base + "/mcp");
+  assert.deepEqual(body.authorization_servers, [SANDBOX]);
+  assert.deepEqual(body.bearer_methods_supported, ["header"]);
+  // Only the MCP resource has a document, as on the hosted site.
+  const root = await realFetch(`http://127.0.0.1:${server.address().port}/.well-known/oauth-protected-resource`);
+  assert.equal(root.status, 404);
+});
+
+test("the 401 challenge names the metadata URL on this address, and that URL answers", async () => {
+  sandbox();
+  const res = await realFetch(base + "/mcp", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+  });
+  assert.equal(res.status, 401);
+  const challenge = res.headers.get("www-authenticate");
+  assert.equal(challenge,
+    `Bearer resource_metadata="http://127.0.0.1:${server.address().port}/.well-known/oauth-protected-resource/sandbox-source/mcp"`);
+  const document = await realFetch(/resource_metadata="([^"]+)"/.exec(challenge)[1]);
+  assert.equal(document.status, 200);
+  assert.equal((await document.json()).resource, base + "/mcp");
+});
