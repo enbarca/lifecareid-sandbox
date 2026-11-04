@@ -82,6 +82,9 @@ http.createServer(nodeHandler(pma, async (request, { grant, receipt }) => {
 }, { scope: "daily" })).listen(8801);
 ```
 
+The grant's `owner` is the person whose data the token opens: serve that
+person's data and nobody else's.
+
 For a Cloudflare Pages Function use `pagesFunction` from `/pages` and mount it
 a second time at `functions/.well-known/oauth-protected-resource/[[path]].js`.
 For an MCP endpoint that authorizes each message itself, pass `{ raw: true }`

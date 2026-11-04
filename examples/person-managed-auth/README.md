@@ -57,6 +57,10 @@ audience, which the server accepts. The tests cover the audience check against
 a double of the sandbox. The kit's Compose file is not used: the server runs in
 this process, which is the natural runtime for a library.
 
+The examples import the library from its folder, by relative path, because the
+package is unpublished. Once it is, the imports in the README's snippets
+(`@lifecareid/person-managed-auth/client` and `/server`) are the ones to use.
+
 ## Environment
 
 | Variable | Default | Meaning |
