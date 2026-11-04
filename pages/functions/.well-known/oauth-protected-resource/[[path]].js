@@ -6,9 +6,10 @@
 // (https://developers.lifecare.id/sandbox-data-source, "Discovery"). All
 // behaviour lives in source/source.js.
 //
-// A function, not a static file, because the document carries the sandbox
-// origin from the Pages project variable LIFECAREID_SANDBOX_ORIGIN and names
-// its own origin from the request, which a static file cannot do.
+// A function, not a static file, because the document
+// carries the sandbox origin from the Pages project variable
+// LIFECAREID_SANDBOX_ORIGIN and names its own origin from the request, which a
+// static file cannot do.
 import { handleProtectedResourceMetadata } from "../../../../source/source.js";
 
 export async function onRequest({ request, env }) {

@@ -20,13 +20,14 @@ import {
 
 const SANDBOX = "https://sandbox.example";
 const ENV = { LIFECAREID_SANDBOX_ORIGIN: SANDBOX + "/" };
-// The source's own client credentials at the sandbox (the
+// The source's own client credentials at the sandbox (lifecareid audit F12: the
 // sandbox admits only an authenticated client to introspection).
 const CREDENTIALED = {
   ...ENV, LIFECAREID_SANDBOX_SOURCE_CLIENT_ID: "sbx_src", LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET: "s3",
 };
 const OWNER = "did:web:sandbox.example:u:817612d13f3219b6";
 const TOKEN = "lc_test-token";
+const METADATA = "https://site.example/.well-known/oauth-protected-resource/sandbox-source/mcp";
 
 const ACTIVE = {
   active: true,
@@ -500,23 +501,81 @@ test("MCP: get_weekly_summary needs the daily scope", async () => {
   const ok = (await (await mcp(call("get_weekly_summary", { owner: OWNER, week: 1 }))).json()).result;
   assert.equal(ok.isError, false);
   assert.equal(ok.structuredContent.data.week.week_index, 1);
-  sandbox();
-  const refused = (await (await mcp(call("get_weekly_summary", { owner: OWNER }))).json()).result;
-  assert.equal(refused.isError, true);
-  assert.equal(refused.structuredContent.error, "insufficient_scope");
+  const calls = sandbox();
+  // A token for another scope: a single call is refused at the transport (403
+  // with the step-up challenge naming daily), and nothing is recorded.
+  const refused = await mcp(call("get_weekly_summary", { owner: OWNER }));
+  assert.equal(refused.status, 403);
+  assert.equal(refused.headers.get("www-authenticate"),
+    'Bearer error="insufficient_scope", scope="daily", resource_metadata="' + METADATA + '"');
+  assert.equal((await refused.json()).error, "insufficient_scope");
+  assert.equal(calls.filter((c) => c.url.endsWith("/record")).length, 0);
 });
 
-test("MCP: wrong scope and wrong subject are tool errors with the REST shapes, and record nothing", async () => {
+test("MCP: a single wrong-scope tools/call is a transport 403 with the step-up challenge, and records nothing", async () => {
   const calls = sandbox();
-  const scope = (await (await mcp(call("read_scope", { scope: "cgm", owner: OWNER }))).json()).result;
-  assert.equal(scope.isError, true);
-  assert.deepEqual(scope.structuredContent, {
+  const res = await mcp(call("read_scope", { scope: "cgm", owner: OWNER }));
+  assert.equal(res.status, 403);
+  // The same { detail, error } body the other transport refusals carry (no
+  // JSON-RPC envelope, no status field), and the three challenge attributes.
+  assert.deepEqual(await res.json(), {
+    detail: 'the token covers scope "recovery", not "cgm"', error: "insufficient_scope",
+  });
+  assert.equal(res.headers.get("www-authenticate"),
+    'Bearer error="insufficient_scope", scope="cgm", resource_metadata="' + METADATA + '"');
+  assert.match(res.headers.get("content-type"), /^application\/json/);
+  // introspected once; nothing written to the owner's ledger
+  assert.deepEqual(calls.map((c) => c.url), [SANDBOX + "/v1/token/introspect"]);
+});
+
+test("MCP: a batch keeps the tool error for a wrong-scope element, and sends no header", async () => {
+  const calls = sandbox();
+  const res = await mcp([
+    call("read_scope", { scope: "cgm", owner: OWNER }, 1),
+    call("read_scope", { scope: "recovery", owner: OWNER }, 2),
+  ]);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("www-authenticate"), null);
+  const answers = await res.json();
+  const refused = answers.find((a) => a.id === 1).result;
+  assert.equal(refused.isError, true);
+  assert.deepEqual(refused.structuredContent, {
     detail: 'the token covers scope "recovery", not "cgm"', error: "insufficient_scope", status: 403,
   });
-  const subject = (await (await mcp(call("read_scope", { scope: "recovery", owner: "did:web:x:u:other" }))).json()).result;
-  assert.equal(subject.structuredContent.error, "wrong_subject");
-  const missing = (await (await mcp(call("read_scope", { scope: "recovery" }))).json()).result;
-  assert.equal(missing.structuredContent.error, "owner_required");
+  assert.equal(answers.find((a) => a.id === 2).result.isError, false);
+  // only the served element was recorded
+  assert.equal(calls.filter((c) => c.url.endsWith("/record")).length, 1);
+
+  // a batch of one is still a batch
+  const one = await mcp([call("read_scope", { scope: "cgm", owner: OWNER })]);
+  assert.equal(one.status, 200);
+  assert.equal(one.headers.get("www-authenticate"), null);
+  assert.equal((await one.json())[0].result.structuredContent.error, "insufficient_scope");
+});
+
+test("MCP: wrong subject, unknown scope and missing owner stay tool errors with the REST shapes, and record nothing", async () => {
+  const calls = sandbox();
+  const subject = await mcp(call("read_scope", { scope: "recovery", owner: "did:web:x:u:other" }));
+  assert.equal(subject.status, 200);
+  assert.equal(subject.headers.get("www-authenticate"), null);
+  const subjectResult = (await subject.json()).result;
+  assert.equal(subjectResult.isError, true);
+  assert.equal(subjectResult.structuredContent.error, "wrong_subject");
+  assert.equal(subjectResult.structuredContent.status, 403);
+
+  const unknown = await mcp(call("read_scope", { scope: "told_to_guardian", owner: OWNER }));
+  assert.equal(unknown.status, 200);
+  assert.equal(unknown.headers.get("www-authenticate"), null);
+  const unknownResult = (await unknown.json()).result;
+  assert.equal(unknownResult.isError, true);
+  assert.equal(unknownResult.structuredContent.error, "unknown_scope");
+  assert.equal(unknownResult.structuredContent.status, 404);
+
+  const missing = await mcp(call("read_scope", { scope: "recovery" }));
+  assert.equal(missing.status, 200);
+  const missingResult = (await missing.json()).result;
+  assert.equal(missingResult.structuredContent.error, "owner_required");
+  assert.equal(missingResult.structuredContent.status, 400);
   assert.equal(calls.filter((c) => c.url.endsWith("/record")).length, 0);
 });
 

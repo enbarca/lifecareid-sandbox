@@ -108,8 +108,9 @@ curl -s https://lifecare.id/.well-known/oauth-protected-resource/sandbox-source/
 The document names the endpoint (`resource`), the sandbox that issues its
 tokens (`authorization_servers`), the scopes the source understands and the
 documentation. The same URL comes back in the challenge of a `401`: an MCP
-request with no token answers `WWW-Authenticate: Bearer resource_metadata="..."`,
-and a request with a token the sandbox refuses adds `error="invalid_token"`. A
+request with no token answers `WWW-Authenticate: Bearer resource_metadata="...", scope="daily"`,
+naming the one scope to ask for, and a request with a token the sandbox refuses
+adds `error="invalid_token"` and no scope. A
 client that follows the MCP authorization specification is therefore led from
 the endpoint to the sandbox without being told. The example client follows the
 same path before it asks for anything: it sends one request with no token,
