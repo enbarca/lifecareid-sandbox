@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// The whole loop against a LifeCare.ID® sandbox, in one run: register a client,
-// mint a synthetic person, grant two scopes, get a token for one, read over
+// The whole loop against a LifeCare.ID® sandbox, in one run: read the source's
+// challenge and follow it to the sandbox (OAuth protected resource metadata,
+// RFC 9728), register a client, mint a synthetic person, grant two scopes, get a token for one, read over
 // REST and over MCP, provoke the refusal for a scope that was not granted, see
 // the read in the person's ledger, revoke, and watch the next read fail on both
-// faces. Then delete the client.
+// faces, with the error the challenge names. Then delete the client.
 //
 // Hosted:  LIFECAREID_DEVACCESS_TOKEN=... node examples/run-loop.mjs
 //          (the token from https://app.lifecare.id/devaccess)
@@ -11,11 +12,15 @@
 //          LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source \
 //          node examples/run-loop.mjs
 //
+// SANDBOX, when set, is kept as given; the sandbox named by the source's own
+// metadata is used when it is not, and the run says whether the two agree.
+//
 // Prints statuses, the persona and the ledger line. It never prints a secret:
 // not the developer access token, not the client secret, not the session, not
 // the data-access token. Exit code 0 when every step answered as the contract
 // says, 1 otherwise. Node 22 or newer, no dependencies.
-const SANDBOX = (process.env.SANDBOX || "https://sandbox.lifecare.id").replace(/\/+$/, "");
+const SANDBOX_GIVEN = (process.env.SANDBOX || "").replace(/\/+$/, "");
+let SANDBOX = SANDBOX_GIVEN || "https://sandbox.lifecare.id";
 const SOURCE = (process.env.SOURCE || "https://lifecare.id/sandbox-source").replace(/\/+$/, "");
 const DEVACCESS = process.env.LIFECAREID_DEVACCESS_TOKEN || "";
 // Add " persona:<id>" (for example persona:p5-glucose-anomaly) to pin a persona.
@@ -44,9 +49,65 @@ function report(step, res, want, note = "") {
   return ok;
 }
 
+// The parameters of a Bearer challenge (RFC 6750 section 3, RFC 9728 section 5.1):
+// resource_metadata="...", error="...". Values only, never a token.
+function challengeParams(res) {
+  const header = res.headers.get("www-authenticate") || "";
+  return Object.fromEntries([...header.matchAll(/([a-z_]+)="([^"]*)"/g)].map((m) => [m[1], m[2]]));
+}
+
+const trusted = (origin) => {
+  try {
+    const u = new URL(origin);
+    return u.protocol === "https:" || (u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname));
+  } catch (_) { return false; }
+};
+
 const mcpCall = (name, args) => ({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } });
 
-console.log(`sandbox ${SANDBOX}\nsource  ${SOURCE}\n`);
+console.log(`source  ${SOURCE}\n`);
+
+// 0. discovery: ask the MCP endpoint with no token, read the challenge, fetch the
+//    protected resource metadata it names, and take the sandbox from there. This
+//    is the path a client that follows the MCP authorization specification takes
+//    from the endpoint to the sandbox without being told.
+const unauthenticated = await call("POST", `${SOURCE}/mcp`, {
+  body: { jsonrpc: "2.0", id: 0, method: "tools/list" },
+});
+const metadataUrl = challengeParams(unauthenticated).resource_metadata;
+report("MCP request without a token", unauthenticated, 401,
+  metadataUrl ? "challenge names " + metadataUrl : "");
+if (unauthenticated.status === 401 && !metadataUrl) {
+  failed = true;
+  console.log("FAIL the challenge carries no resource_metadata");
+}
+if (metadataUrl) {
+  const metadata = await call("GET", metadataUrl);
+  report("protected resource metadata", metadata, 200,
+    `resource ${metadata.json?.resource}, scopes ${(metadata.json?.scopes_supported ?? []).length}`);
+  const resourceOk = metadata.json?.resource === `${SOURCE}/mcp`;
+  if (metadata.status === 200 && !resourceOk) {
+    failed = true;
+    console.log(`FAIL the document's resource is not the endpoint called (${SOURCE}/mcp)`);
+  } else if (resourceOk) {
+    console.log("ok   resource matches the endpoint called");
+  }
+  const discovered = (metadata.json?.authorization_servers?.[0] || "").replace(/\/+$/, "");
+  if (!discovered || !trusted(discovered)) {
+    failed = true;
+    console.log("FAIL the metadata names no usable authorization server (https, or http on loopback)");
+  } else if (!SANDBOX_GIVEN) {
+    SANDBOX = discovered;
+    console.log(`ok   sandbox ${SANDBOX} (from the metadata)`);
+  } else if (discovered === SANDBOX_GIVEN) {
+    console.log(`ok   sandbox ${SANDBOX} (given; the metadata agrees)`);
+  } else {
+    console.log(`note sandbox ${SANDBOX} (given; the metadata names ${discovered}, kept the one given)`);
+  }
+} else {
+  console.log(`note sandbox ${SANDBOX} (no metadata to follow)`);
+}
+console.log("");
 
 // 1. register a client (the hosted sandbox needs the developer access token)
 const registered = await call("POST", `${SANDBOX}/v1/sandbox/clients`, {
@@ -113,9 +174,11 @@ report("revoke the grant", revoked, 200);
 
 // 10. the same token, refused on both faces
 const replayRest = await call("GET", readUrl, { bearer: token });
-report("REST read after revocation", replayRest, 401, replayRest.json?.error ?? "");
+report("REST read after revocation", replayRest, 401,
+  `${replayRest.json?.error ?? ""}, challenge error ${challengeParams(replayRest).error ?? "(none)"}`);
 const replayMcp = await call("POST", `${SOURCE}/mcp`, { bearer: token, body: { jsonrpc: "2.0", id: 2, method: "tools/list" } });
-report("MCP tools/list after revocation", replayMcp, 401, replayMcp.json?.error ?? "");
+report("MCP tools/list after revocation", replayMcp, 401,
+  `${replayMcp.json?.error ?? ""}, challenge error ${challengeParams(replayMcp).error ?? "(none)"}`);
 
 // 11. delete the client with its own secret (the hosted sandbox wants the
 //     developer access token as the lc_dev cookie here, since the header

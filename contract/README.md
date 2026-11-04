@@ -16,10 +16,12 @@ The three sandbox-only routes (`POST /v1/sandbox/clients`,
 `DELETE /v1/sandbox/clients/{client_id}`, `POST /v1/sandbox/test-identity`) are
 not in the contract: a production instance answers them `404`. They are
 documented at
-[developers.lifecare.id/sandbox.html](https://developers.lifecare.id/sandbox.html).
-The source's own routes (`/sandbox-source/...`) are not in it either: the
-source is a resource server, not the identity server, and its reference is
-[developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html).
+[developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox).
+The source's own routes (`/sandbox-source/...`) are not in it either, nor is
+the protected resource metadata route
+(`/.well-known/oauth-protected-resource/sandbox-source/mcp`): the source is a
+resource server, not the identity server, and its reference is
+[developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source).
 
 ## `server.json`
 

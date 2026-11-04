@@ -8,9 +8,9 @@ contribution is a finding.
 Open an issue with the request you sent (method, path, headers with the token
 removed, body) and the response you got. Say what the contract promised
 instead; the two references are
-[developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html)
+[developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source)
 for the source and
-[developers.lifecare.id/sandbox.html](https://developers.lifecare.id/sandbox.html)
+[developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox)
 for the sandbox. A finding in the identity server, which is not in this
 repository, is welcome here too and is taken upstream.
 
