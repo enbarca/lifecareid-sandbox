@@ -22,7 +22,10 @@ repository, is welcome here too and is taken upstream.
   here is the way to ask for it.
 - `source/source.js` is kept identical to the code that runs at
   `https://lifecare.id/sandbox-source`. A change there is proposed as an issue
-  first.
+  first. The same holds for the personas and data, the two Pages Functions, the
+  two handler test files and `contract/openapi.json`: they are copied from
+  upstream by `scripts/sync-upstream.mjs`, which records the commit in
+  `sync/UPSTREAM`, so a hand edit to them would be overwritten by the next sync.
 - Run `node --test` before opening a pull request. Node 22 or newer, no
   dependencies.
 - Documents follow a few rules the tests enforce: no em dash, no exclamation

@@ -125,6 +125,31 @@ own address as the resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as
 the authorization server. The words are in the
 [sandbox data source reference](https://developers.lifecare.id/sandbox-data-source).
 
+## Keeping in step with upstream
+
+For maintainers. The source, its personas and data, the two Pages Functions,
+the two handler test files and the contract are copies of files that live in
+the LifeCare.ID® repository. `scripts/sync-upstream.mjs` makes the copy
+mechanical: it reads each file from a local checkout of that repository at a
+commit you name, applies the few literal substitutions recorded in
+`sync/map.json` (repository paths in comments become public URLs, import paths
+become the kit's), and writes the kit files. The commit it synced from is
+written to `sync/UPSTREAM`: the full commit and its date.
+
+```bash
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit>
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --check
+```
+
+The second form writes the same files to a temporary directory and diffs them
+against this working tree: exit 0 when they are identical, exit 1 with the
+diff when they are not. Run it to see drift, or to verify a sync. It needs the
+private checkout, so it does not run in this repository's CI. The script
+reads only from that commit (never from the checkout's working tree), reads
+only four upstream directories, fetches nothing, and refuses to write when an
+upstream file carries a name on the private list in the map, naming the file
+and line.
+
 ## Tests
 
 ```bash
