@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 const ROOT = new URL("../", import.meta.url);
 const DOCS = [
-  "README.md", "CONTRIBUTING.md", "NOTICE", "pages/README.md", "compose/README.md",
+  "README.md", "AGENTS.md", "CONTRIBUTING.md", "NOTICE", "pages/README.md", "compose/README.md",
   "contract/README.md", "examples/README.md", "lib/person-managed-auth/README.md",
   "lib/person-managed-auth/CHANGELOG.md", "examples/person-managed-auth/README.md",
 ];

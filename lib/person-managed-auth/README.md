@@ -245,3 +245,5 @@ node --test                                  # from the kit root
 The tests run the real SDK against an authorization server double that behaves
 as the hosted sandbox does, and the library's own server in front of a small MCP
 endpoint, on loopback.
+
+A coding agent working on this library should read [AGENTS.md](../../AGENTS.md) at the kit root first: the files it must not edit and the library's rules in ten lines.
