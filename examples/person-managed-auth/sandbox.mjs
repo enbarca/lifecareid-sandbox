@@ -88,9 +88,17 @@ export async function theYes(authorizeUrl, person) {
   const cookie = `__Host-lc_id_session=${person.session}`;
   const page = await fetch(u, { headers: { cookie }, redirect: "manual" });
   const html = await page.text();
-  const text = html.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/&reg;/g, "®").replace(/\s+/g, " ").trim();
+  const strip = (h) => h.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/&reg;/g, "®").replace(/\s+/g, " ").trim();
+  // The heading is the question; "Who asks" onward is the terms.
+  const heading = strip(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "");
+  const all = strip(html);
+  const terms = all.includes("Who asks") ? all.slice(all.indexOf("Who asks")) : all;
+  const text = `${heading} | ${terms}`;
   const action = html.match(/<form method="post" action="([^"]+)"/)?.[1];
-  if (page.status !== 200 || !action) throw new Error(`the grant page did not render (${page.status})`);
+  if (page.status !== 200 || !action) {
+    const why = new URL(page.headers.get("location") || "http://x/").searchParams.get("error");
+    throw new Error(`the grant page did not render (${page.status}${why ? `, the issuer answered ${why}` : ""})`);
+  }
   const form = new URLSearchParams();
   for (const m of html.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)) {
     form.set(m[1], m[2].replace(/&amp;/g, "&").replace(/&quot;/g, '"'));

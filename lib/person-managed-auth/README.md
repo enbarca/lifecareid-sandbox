@@ -101,9 +101,15 @@ client at the end. Both close the loop: discover, the person grants, read, the
 receipt, the person revokes, the next read is refused.
 
 ```bash
+npm ci --prefix lib/person-managed-auth                                       # once: installs the SDK
 LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/agent.mjs    # the client half
 LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/server.mjs   # the server half
 ```
+
+Until the package is published, the snippets' imports
+(`@lifecareid/person-managed-auth/client`, `/server`, `/node`, `/pages`) go by
+relative path: `lib/person-managed-auth/src/client.js`, `server.js`, `node.js`
+and `pages.js`, as the examples do.
 
 In both, the person's yes and revoke are made with a synthetic identity's
 session, as the sandbox walkthrough does, and the example says so where it
@@ -137,9 +143,12 @@ the person's stop. The library drops the token, aborts `agent.stopped`, calls
 `onStopped` once, and throws `PersonStopped`. It does not retry and does not ask
 the person again by itself. A token past its lifetime is not presented at all and
 is reported as `ended`, with `reason: "expired"` on the next ask, because the
-tokens here carry no refresh token. A token refused on its very first use is a
-mismatch between the token and the resource (audience, grantee), reported as
-`TokenRefused`, not as a stop.
+tokens here carry no refresh token. A token refused on its very first use is told apart by asking the issuer about
+the agent's own token: inactive before its expiry means the person revoked
+between the yes and the first read, and is a stop like any other; active means
+the token does not fit the resource (audience, grantee), reported as
+`TokenRefused`, not as a stop. A `403` that says `wrong_grantee` or
+`wrong_token_type` on a first use is `TokenRefused` too.
 
 ### The credential rule
 
@@ -154,13 +163,15 @@ The opt-in is to configure the other issuer yourself, with a client registered
 there. The same rule holds on the server: the client secret goes only to the
 authorization server's origin, and an endpoint override on another origin is
 refused at construction. Every request the SDK makes passes through one check
-before it leaves the process.
+before it leaves the process (redirects are the SDK's own within-origin policy,
+which does not follow one to another origin). Discovery fetches the discovered
+issuer's metadata, with no credential, before it can see that the issuer differs.
 
 ## What the server does, call by call
 
 | Call | Does |
 |---|---|
-| `createResourceServer(options)` | the server. `resource`, `authorizationServer`, `clientId`, `clientSecret`, `scopes` are required; `scope` (the one a 401 suggests), `grantees`, `accessor`, `documentation` are optional |
+| `createResourceServer(options)` | the server. `resource`, `authorizationServer`, `clientId`, `clientSecret`, `scopes`, `grantees` are required (see below); `scope` (the one a 401 suggests), `accessor`, `documentation` are optional |
 | `authenticate(request, { scope })` | asks the authorization server about the token, every time, caches nothing; throws a `Refusal`; returns the grant (`owner`, `scope`, `purpose`, `grantee`, `consentId`, `expiresAt`) |
 | `requireScope(grant, scope)` | refuses with the 403 step-up refusal; for a server that learns the scope from the body of the call |
 | `record(grant)` | writes one line to the person's ledger and returns the receipt `{ consent_id, access_recorded, ledger_entry_hash }`; fails closed with 503, nothing is served |
@@ -170,11 +181,14 @@ before it leaves the process.
 
 ### Which clients may hold a token
 
-`grantees` decides whose token you serve. `"own"` (the default) accepts only a
-token issued to this server's own registered client. `"any"` accepts a token
-issued to any client the authorization server names, which is what a server for
-many agents wants. An array of client ids or a function narrows it. A token that
-names no client is never accepted.
+`grantees` is required and has no default; the constructor refuses to start
+without it. `"any"` accepts a token issued to any client the authorization
+server names, which is what a server for many agents wants. An array of client
+ids or a function narrows it. `"own"` accepts only a token issued to this
+server's own registered client. A token that names no client is never accepted.
+Each default would be wrong for half of servers, and the choice is one line.
+Note that a token from the sandbox's API path carries no audience, so with `"any"`
+a server serves any client's token of the right scope.
 
 ### What the server checks, and in what order
 
@@ -189,7 +203,7 @@ applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token`,
 
 ## What it is not
 
-- Not a gateway or a proxy: the data goes from your server to the caller, not through this library.
+- Not a gateway or a proxy: the library adds the receipt to your answer in your process and keeps and sends nothing else. The data goes from your server to the caller.
 - Not a vault: the client keeps a token in memory for its lifetime and nothing else.
 - Not a values store: a receipt is a consent id and a hash, and the library holds no health value on either side.
 - Not a login: it does not tell you who the person is. It tells you what the person has allowed, for whom, until when.
@@ -204,7 +218,8 @@ applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token`,
 | The receipt's shape | follows the hosted sandbox source today (`consent_id`, `access_recorded`, `ledger_entry_hash` in the body of the answer). The profile defines it in draft 1 |
 | The introspection and ledger-write paths | the paths LifeCare.ID® uses under the issuer (`/v1/token/introspect`, `/v1/access/record`); overridable on the server |
 | Resources a sandbox client can name | the hosted sandbox issues authorization-code tokens only for the resources it lists, so a server on your machine uses the API path to obtain a token in its example |
-| Revoked and expired | the client tells them apart by its own clock; the standard 401 does not |
+| Which clients a server accepts | `grantees` is a required choice with no default. Once every authorization-code token carries an audience, the profile can say whether a data token may lack one at all |
+| Revoked and expired | the standard 401 does not tell them apart. The client uses its own clock for a token it has seen expire, and asks the issuer about its own token when a token is refused on its first use |
 | Python, other languages | a later row |
 
 ## Dependencies and licence

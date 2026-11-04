@@ -57,7 +57,7 @@ try {
 
   step("2. the person's yes (stand-in: the synthetic identity's session posts it; a real person taps a passkey on the phone)");
   const yes = await theYes(first.ask.authorizeUrl, person);
-  say(`     the question, as the person reads it: ${yes.question.slice(0, 200)}`);
+  say(`     the question, as the person reads it: ${yes.question.slice(0, 260)}`);
   const cb = new URL(yes.callback);
   say(`     callback: code=${cut(cb.searchParams.get("code"))} state=${cut(cb.searchParams.get("state"))} iss=${cb.searchParams.get("iss")}`);
 

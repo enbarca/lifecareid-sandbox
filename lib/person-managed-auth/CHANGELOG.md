@@ -17,7 +17,9 @@ this` in the code:
 - The 403 step-up: `error="insufficient_scope"`, the `scope` the call asked for,
   and `resource_metadata`.
 - Refusals as `{ detail, error }`.
-- The grantee as the `requester` the introspection names.
+- The grantee as the `requester` the introspection names. `grantees` is a
+  required option on the server with no default (`"any"`, a list, a function or
+  `"own"`): each default is wrong for half of servers.
 - The introspection and ledger-write paths under the issuer.
 - The `purpose` parameter of the authorization request.
 - One scope per token, and the step-up replacing the held token.

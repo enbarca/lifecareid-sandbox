@@ -54,8 +54,10 @@ authorization code flow. The hosted sandbox issues authorization-code tokens
 only for the resources it lists, and a server on your machine is not one of
 them. The token is the same kind, single scope and short lived; it has no
 audience, which the server accepts. The tests cover the audience check against
-a double of the sandbox. The kit's Compose file is not used: the server runs in
-this process, which is the natural runtime for a library.
+a double of the sandbox. The kit's Compose file is not used by either example: the server half runs in
+this process, which is the natural runtime for a library, and the client half
+cannot read from the Compose source, because the hosted issuer refuses a
+loopback resource at `/authorize` for the same reason.
 
 The examples import the library from its folder, by relative path, because the
 package is unpublished. Once it is, the imports in the README's snippets
