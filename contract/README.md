@@ -3,9 +3,16 @@
 ## `openapi.json`
 
 The API of a LifeCare.ID® instance, as the hosted sandbox and production serve
-it. Fetched from `https://developers.lifecare.id/openapi.json` on 2026-11-04:
-**version 0.25.0**, 48 paths. It is a copy for convenience; the file at that
-address is the authority, and this copy is refreshed when the kit is:
+it. It is a copy for convenience; the file at
+`https://developers.lifecare.id/openapi.json` is the authority.
+
+Copy in this folder: **version 0.26.0**, 48 paths, taken from the upstream contract at commit `d695a3c2ab99` of 2026-11-04.
+
+The copy is refreshed when the kit is. A maintainer with the lifecareid checkout
+runs `scripts/sync-upstream.mjs`, which copies the contract at the commit it
+syncs from and rewrites the line above (see "Keeping in step with upstream" in
+the [kit README](../README.md)). A reader without the checkout can refresh it
+by hand:
 
 ```bash
 curl -sS https://developers.lifecare.id/openapi.json -o contract/openapi.json

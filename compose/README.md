@@ -144,6 +144,13 @@ specification finds the sandbox from your source alone.
 }
 ```
 
+A single `tools/call` for a scope the token does not cover is refused at the
+transport, not inside the tool result: HTTP `403` with `{detail, error}` as the
+body and `WWW-Authenticate: Bearer error="insufficient_scope", scope="<the scope asked for>", resource_metadata="..."`,
+so a client that follows the MCP authorization specification can step up to the
+scope named; inside a JSON-RPC batch the same refusal stays a tool error, and
+nothing is written to the ledger either way.
+
 ## How it is wired
 
 The container runs `compose/source/server.mjs`, Node's http module in front of

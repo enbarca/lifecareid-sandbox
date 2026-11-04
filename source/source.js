@@ -26,7 +26,7 @@
 import PERSONAS from "./personas.generated.js";
 
 export const PREFIX = "/sandbox-source";
-export const VERSION = "0.1.0";
+export const VERSION = "0.3.0";
 export const ACCESSOR = "sandbox-source:synthetic-personas";
 export const NOTICE =
   "Synthetic persona data from the LifeCare.ID® sandbox reference source. " +
@@ -55,6 +55,11 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 const MAX_TOKEN_LENGTH = 512;
 const PERSONA_PIN = /(?:^|[\s\[(;,])persona:(p[0-9]+-[a-z0-9-]+)/;
 
+// The one scope the bare 401 challenge asks for: the broadest everyday scope,
+// and the one the explainer and the live walk of 2026-11-03 used.
+// profile draft 1 may change this
+const CHALLENGE_SCOPE = "daily";
+
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
@@ -82,11 +87,14 @@ function json(status, body, extra = {}) {
 // A refusal: { detail, error } in the service's own `detail` style, plus a
 // stable machine code. Thrown by the checks, turned into a response per face.
 export class Refusal extends Error {
-  constructor(status, error, detail) {
+  // `scope`: for a 403 insufficient_scope, the scope the read asked for, named in
+  // the challenge so a client knows which scope to ask for (RFC 6750 section 3.1).
+  constructor(status, error, detail, { scope } = {}) {
     super(detail);
     this.status = status;
     this.error = error;
     this.detail = detail;
+    this.scope = scope;
   }
   body() {
     return { detail: this.detail, error: this.error };
@@ -96,13 +104,30 @@ export class Refusal extends Error {
   // Metadata Discovery Requirements"). `error="invalid_token"` is added only when
   // a token was presented and refused: RFC 6750 section 3.1 says a request that
   // carried no credentials gets a bare challenge, without an error code.
+  //
+  // The bare challenge on the MCP path also names the scope to ask for (RFC 6750
+  // section 3; MCP authorization, "Protected Resource Metadata Discovery
+  // Requirements": a client takes the challenge's `scope` first). Without it a
+  // stock client asks for every entry of `scopes_supported`, and this issuer
+  // mints single-scope tokens. A refused token gets no scope: the fault is the
+  // token, not what was asked.
+  //
+  // A 403 insufficient_scope names the scope the read asked for, and on the MCP
+  // path the metadata URL, so the client can start a new authorization (RFC 6750
+  // section 3.1; the profile's step-up vector).
   response({ resourceMetadata } = {}) {
     let extra = {};
     if (this.status === 401) {
       const params = [];
       if (resourceMetadata) params.push(`resource_metadata="${resourceMetadata}"`);
       if (this.error === "invalid_token") params.push('error="invalid_token"');
+      // profile draft 1 may change this
+      if (resourceMetadata && this.error === "missing_token") params.push(`scope="${CHALLENGE_SCOPE}"`);
       extra = { "www-authenticate": params.length ? "Bearer " + params.join(", ") : "Bearer" };
+    } else if (this.status === 403 && this.error === "insufficient_scope" && this.scope) {
+      const params = ['error="insufficient_scope"', `scope="${this.scope}"`];
+      if (resourceMetadata) params.push(`resource_metadata="${resourceMetadata}"`);
+      extra = { "www-authenticate": "Bearer " + params.join(", ") };
     }
     return json(this.status, this.body(), extra);
   }
@@ -211,6 +236,18 @@ export async function introspect(request, env) {
     throw new Refusal(403, "wrong_token_type",
       "a data-access token is required (token_type \"access\")");
   }
+  // Audience (RFC 8707; MCP authorization, "Token Audience Binding and
+  // Validation"): a token issued for a named resource must name this one. The
+  // identifier is the MCP endpoint for both faces: one resource server, two
+  // faces, and the one identifier its metadata publishes as `resource`. A token
+  // without `aud` (a /v1/token token) is accepted as before.
+  if (info.aud !== undefined && info.aud !== null) {
+    const resource = new URL(request.url).origin + MCP_RESOURCE_PATH;
+    const audiences = Array.isArray(info.aud) ? info.aud : [info.aud];
+    if (!audiences.includes(resource)) {
+      throw new Refusal(401, "invalid_token", "the token was issued for another resource");
+    }
+  }
   if (typeof info.resource_owner !== "string" || !info.resource_owner.startsWith("did:")) {
     throw new Refusal(403, "wrong_subject", "the token names no resource owner");
   }
@@ -224,7 +261,8 @@ export function authorize(info, scope, owner) {
   }
   if (info.scope !== scope) {
     throw new Refusal(403, "insufficient_scope",
-      `the token covers scope ${JSON.stringify(info.scope)}, not ${JSON.stringify(scope)}`);
+      `the token covers scope ${JSON.stringify(info.scope)}, not ${JSON.stringify(scope)}`,
+      { scope });
   }
   if (!owner) {
     throw new Refusal(400, "owner_required",
@@ -507,7 +545,19 @@ function toolResult(payload, isError = false) {
   };
 }
 
-async function callTool(info, env, params) {
+// `transport`: true only for a single (non-batch) tools/call. A wrong-scope
+// call is then not a tool result but an authorization error, so the refusal is
+// rethrown and handleRequest answers it at the transport: HTTP 403 with
+// `WWW-Authenticate: Bearer error="insufficient_scope", scope="<asked>",
+// resource_metadata="..."` (MCP authorization 2026-07-28, "Runtime Insufficient
+// Scope Errors"; RFC 6750 section 3.1). A client that follows the specification
+// re-runs authorization for the scope named. Only insufficient_scope moves:
+// wrong_subject, unknown_scope, owner_required and every other refusal stay
+// tool errors (they are not something the person can be asked to widen). Inside
+// a JSON-RPC batch one HTTP status cannot speak for several requests, so a batch
+// keeps the in-band tool error for that element (transport false). Nothing is
+// recorded for a refused call: the scope check runs before recordAccess.
+async function callTool(info, env, params, { transport = false } = {}) {
   const name = params && params.name;
   const args = (params && params.arguments) || {};
   try {
@@ -519,13 +569,17 @@ async function callTool(info, env, params) {
       return toolResult(await weeklySummary(info, env, { owner: String(args.owner ?? ""), week: args.week }));
     }
   } catch (e) {
-    if (e instanceof Refusal) return toolResult({ ...e.body(), status: e.status }, true);
+    if (e instanceof Refusal) {
+      if (transport && e.error === "insufficient_scope" && e.scope) throw e;
+      return toolResult({ ...e.body(), status: e.status }, true);
+    }
     throw e;
   }
   return null; // unknown tool
 }
 
-async function rpc(message, info, env) {
+// `single`: the message is the whole request body, not an element of a batch.
+async function rpc(message, info, env, { single = false } = {}) {
   if (!message || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
     return rpcError(message && message.id, -32600, "invalid request");
   }
@@ -583,7 +637,7 @@ async function rpc(message, info, env) {
   if (method === "logging/setLevel") return rpcResult(id, {});
   if (method === "tools/list") return rpcResult(id, { tools: TOOLS, ...CACHEABLE });
   if (method === "tools/call") {
-    const result = await callTool(info, env, params);
+    const result = await callTool(info, env, params, { transport: single });
     return result ? rpcResult(id, result) : rpcError(id, -32602, "unknown tool");
   }
   return rpcError(id, -32601, "method not found");
@@ -608,7 +662,7 @@ async function mcp(request, env) {
     const answers = (await Promise.all(message.map((m) => rpc(m, info, env)))).filter(Boolean);
     return answers.length ? json(200, answers) : new Response(null, { status: 202, headers: CORS });
   }
-  const answer = await rpc(message, info, env);
+  const answer = await rpc(message, info, env, { single: true });
   return answer ? json(200, answer) : new Response(null, { status: 202, headers: CORS });
 }
 

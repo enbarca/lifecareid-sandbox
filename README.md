@@ -108,8 +108,9 @@ curl -s https://lifecare.id/.well-known/oauth-protected-resource/sandbox-source/
 The document names the endpoint (`resource`), the sandbox that issues its
 tokens (`authorization_servers`), the scopes the source understands and the
 documentation. The same URL comes back in the challenge of a `401`: an MCP
-request with no token answers `WWW-Authenticate: Bearer resource_metadata="..."`,
-and a request with a token the sandbox refuses adds `error="invalid_token"`. A
+request with no token answers `WWW-Authenticate: Bearer resource_metadata="...", scope="daily"`,
+naming the one scope to ask for, and a request with a token the sandbox refuses
+adds `error="invalid_token"` and no scope. A
 client that follows the MCP authorization specification is therefore led from
 the endpoint to the sandbox without being told. The example client follows the
 same path before it asks for anything: it sends one request with no token,
@@ -124,6 +125,38 @@ The source on your machine publishes its own document the same way, naming its
 own address as the resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as
 the authorization server. The words are in the
 [sandbox data source reference](https://developers.lifecare.id/sandbox-data-source).
+
+## Keeping in step with upstream
+
+For maintainers. The source, its personas and data, the two Pages Functions,
+the two handler test files and the contract are copies of files that live in
+the LifeCare.ID® repository. `scripts/sync-upstream.mjs` makes the copy
+mechanical: it reads each file from a local checkout of that repository at a
+commit you name, applies the few literal substitutions recorded in
+`sync/map.json` (repository paths in comments become public URLs, import paths
+become the kit's), and writes the kit files. The commit it synced from is
+written to `sync/UPSTREAM`: the full commit and its date.
+
+```bash
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --names-file /path/to/names.txt
+node scripts/sync-upstream.mjs --from /path/to/checkout --ref <commit> --names-file /path/to/names.txt --check
+```
+
+The names file is the program's private names list, one name per line, the
+same file its own names gate reads; `NAMES_GATE_FILE` can name it instead of
+the flag. This repository holds no names, and the script has no default path:
+with no list it exits 1 without reading or writing anything, in both forms. A
+maintainer passes the list; a contributor without it cannot run a sync.
+
+The second form writes the same files to a temporary directory and diffs them
+against this working tree: exit 0 when they are identical, exit 1 with the
+diff when they are not. Run it to see drift, or to verify a sync. It needs the
+private checkout, so it does not run in this repository's CI. The script
+reads only from that commit (never from the checkout's working tree), reads
+only four upstream directories, fetches nothing, and refuses to write when an
+upstream file carries a name on the list, naming the file and line and never
+the name. It also refuses to write through a symbolic link or into any `.git`
+folder.
 
 ## Tests
 

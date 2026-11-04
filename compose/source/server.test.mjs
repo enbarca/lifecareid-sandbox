@@ -130,7 +130,7 @@ test("the 401 challenge names the metadata URL on this address, and that URL ans
   assert.equal(res.status, 401);
   const challenge = res.headers.get("www-authenticate");
   assert.equal(challenge,
-    `Bearer resource_metadata="http://127.0.0.1:${server.address().port}/.well-known/oauth-protected-resource/sandbox-source/mcp"`);
+    `Bearer resource_metadata="http://127.0.0.1:${server.address().port}/.well-known/oauth-protected-resource/sandbox-source/mcp", scope="daily"`);
   const document = await realFetch(/resource_metadata="([^"]+)"/.exec(challenge)[1]);
   assert.equal(document.status, 200);
   assert.equal((await document.json()).resource, base + "/mcp");

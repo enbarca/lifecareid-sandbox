@@ -17,6 +17,6 @@ jobs:
         with:
           node-version: "22"
       - name: Syntax
-        run: node --check compose/source/server.mjs && node --check examples/run-loop.mjs
+        run: node --check compose/source/server.mjs && node --check examples/run-loop.mjs && node --check scripts/sync-upstream.mjs
       - name: Tests
         run: node --test
