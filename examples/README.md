@@ -1,7 +1,7 @@
 # Example client: the whole loop
 
 `run-loop.mjs` runs every step of the sandbox walkthrough in one go and checks
-each answer against the contract: register, mint, grant, token, REST read, a
+each answer against the contract: discovery, register, mint, grant, token, REST read, a
 refused read of an ungranted scope, MCP read, ledger, revoke, the replay of the
 revoked token on both faces, and the client's deletion. Node 22 or newer, no
 dependencies.
@@ -31,12 +31,34 @@ LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source node 
 `SANDBOX` overrides the sandbox origin too (an `https` origin, or plain
 `http` on loopback), for anyone who operates a sandbox instance of their own.
 
+## Discovery first
+
+Before it asks the sandbox for anything, the client sends one MCP request to
+`${SOURCE}/mcp` with no token and expects `401`. It reads `resource_metadata`
+from the `WWW-Authenticate` challenge, fetches that document (OAuth protected
+resource metadata, RFC 9728) and checks that its `resource` is the endpoint it
+called. It then compares the sandbox the document names, `authorization_servers[0]`,
+with the sandbox the run will use.
+
+The developer access token is a credential for one issuer, so it goes only to
+`https://sandbox.lifecare.id` (the default) or to the origin you set as
+`SANDBOX`, never to a server a source's metadata names. When the document names
+the sandbox in use, the run goes on. When it names another one and `SANDBOX` is
+not set, the run stops with exit 1 before it sends anything, and tells you the
+origin to set as `SANDBOX` if you trust it. When `SANDBOX` is set and the
+document names another, the run says so and keeps the one you set. The sandbox
+registration, the synthetic person, the grant and the token that follow are
+unchanged; the authorization code flow a client would run against that sandbox
+is not in this example.
+
 ## What it prints
 
 One line per step with the status and what matters from the answer: the
-client id, the synthetic DID, the consent id, the persona the DID maps to and
+challenge and the metadata it points to, whether it agrees with the sandbox in
+use, the client id, the synthetic DID, the consent id, the persona the DID maps to and
 how it was selected, the band it reports, whether the access was recorded, the
-ledger counts and the latest ledger line, and the two `401`s after revocation.
+ledger counts and the latest ledger line, and the two `401`s after revocation,
+each with the `error` its challenge carries.
 It exits 0 when every step answered as the contract says and 1 otherwise.
 
 It never prints a secret: not the developer access token, not the client

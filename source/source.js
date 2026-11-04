@@ -1,7 +1,7 @@
 // The sandbox synthetic source: a zero-PHI reference data source for the
 // LifeCare.ID sandbox. A TEST FIXTURE, not a product surface.
 //
-// It behaves as a conforming resource host (https://developers.lifecare.id/data-sources.html)
+// It behaves as a conforming resource host (https://developers.lifecare.id/data-sources)
 // against the SANDBOX authorization server, and it serves five synthetic
 // personas (personas.generated.js, generated upstream from the challenge readiness
 // simulation's extract in data/simulator-extract.json). Interpreted outputs only: scores, bands,
@@ -32,7 +32,7 @@ export const NOTICE =
   "Synthetic persona data from the LifeCare.ID® sandbox reference source. " +
   "Not a person. Zero PHI. Test fixture.";
 
-// The fixed MVP scope vocabulary (https://developers.lifecare.id/scopes-and-consent.html) and
+// The fixed MVP scope vocabulary (https://developers.lifecare.id/scopes-and-consent) and
 // what this source answers for each.
 export const SCOPES = {
   cgm: "Glucose stability: the glycemic band, score and weekly direction. Covered for one persona only.",
@@ -45,7 +45,11 @@ export const SCOPES = {
 };
 export const WEEKLY_SUMMARY_SCOPE = "daily";
 
-const MCP_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+const MCP_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
+// The modern era (2026-07-28 and later): no handshake, every request carries its
+// own `_meta` stamp, and a client probes `server/discover` first. This server is
+// stateless, so it serves both eras with the same handlers.
+const MCP_MODERN_VERSIONS = ["2026-07-28"];
 const MCP_DEFAULT_VERSION = "2025-06-18";
 const UPSTREAM_TIMEOUT_MS = 8000;
 const MAX_TOKEN_LENGTH = 512;
@@ -87,11 +91,19 @@ export class Refusal extends Error {
   body() {
     return { detail: this.detail, error: this.error };
   }
-  response() {
-    const extra =
-      this.status === 401
-        ? { "www-authenticate": `Bearer error="${this.error}"` }
-        : {};
+  // `resourceMetadata`: the RFC 9728 metadata URL, put in the 401 challenge on
+  // the MCP path (RFC 9728 section 5.1; MCP authorization, "Protected Resource
+  // Metadata Discovery Requirements"). `error="invalid_token"` is added only when
+  // a token was presented and refused: RFC 6750 section 3.1 says a request that
+  // carried no credentials gets a bare challenge, without an error code.
+  response({ resourceMetadata } = {}) {
+    let extra = {};
+    if (this.status === 401) {
+      const params = [];
+      if (resourceMetadata) params.push(`resource_metadata="${resourceMetadata}"`);
+      if (this.error === "invalid_token") params.push('error="invalid_token"');
+      extra = { "www-authenticate": params.length ? "Bearer " + params.join(", ") : "Bearer" };
+    }
     return json(this.status, this.body(), extra);
   }
 }
@@ -149,7 +161,7 @@ function bearer(request) {
 // The source's own client credentials, as HTTP Basic, from two Pages project
 // variables: LIFECAREID_SANDBOX_SOURCE_CLIENT_ID and _SECRET, a client the
 // sandbox knows. Presented on the introspection (the sandbox admits only an
-// authenticated client, RFC 7662 section 2.1) and on the
+// authenticated client, lifecareid audit F12, RFC 7662 section 2.1) and on the
 // access record. Either variable unset: no header, and a sandbox that requires
 // one answers 401, which the source reports as `source_not_authorized`.
 export function sourceCredentials(env) {
@@ -366,7 +378,7 @@ export function descriptor(env, url) {
     // (never the credentials themselves). Introspection needs them.
     client_credentials: Object.keys(sourceCredentials(env)).length > 0,
     authorization_server: sandboxOrigin(env),
-    docs: "https://developers.lifecare.id/sandbox-data-source.html",
+    docs: RESOURCE_DOCUMENTATION,
     as_of: PERSONAS.as_of,
     persona_ids: PERSONAS.persona_ids,
     persona_mapping:
@@ -380,6 +392,7 @@ export function descriptor(env, url) {
     },
     mcp: {
       endpoint: `${base}/mcp`,
+      resource_metadata: resourceMetadataUrl(url.origin),
       transport: "streamable HTTP, stateless, JSON responses",
       tools: TOOLS.map((t) => t.name),
       label: "Test fixture for agent governance pilots. Not the member MCP surface.",
@@ -474,8 +487,13 @@ export const TOOLS = [
 ];
 
 function rpcResult(id, result) {
-  return { jsonrpc: "2.0", id, result };
+  // Every result carries `resultType` (required by the 2026-07-28 schema on the
+  // base Result; a legacy client ignores the extra field). Found 2026-10-27: a
+  // new-SDK gateway validates every result against the era it negotiated.
+  return { jsonrpc: "2.0", id, result: { resultType: "complete", ...result } };
 }
+// The list results of 2026-07-28 also require a cache lifetime and scope.
+const CACHEABLE = { ttlMs: 300000, cacheScope: "public" };
 
 function rpcError(id, code, message) {
   return { jsonrpc: "2.0", id: id ?? null, error: { code, message } };
@@ -528,8 +546,42 @@ async function rpc(message, info, env) {
         "token can read. Tokens are single scope. This is not the member MCP surface.",
     });
   }
+  if (method === "server/discover") {
+    // 2026-07-28 discovery: a client that speaks the modern era asks this before
+    // anything else and falls back to `initialize` only on an HTTP 400 with an
+    // unrecognised body. Answering it keeps gateways on the new SDK (a gateway
+    // firewall, 2026-10-27) from reporting "method not found" on every call.
+    return rpcResult(id, {
+      resultType: "complete",
+      supportedVersions: MCP_MODERN_VERSIONS,
+      // Both required by the 2026-07-28 schema (DiscoverResult): a client's
+      // validation fails without them (a gateway firewall, 2026-10-27, second
+      // round). Public, because discovery carries no user-specific data.
+      ttlMs: 300000,
+      cacheScope: "public",
+      capabilities: { tools: { listChanged: false } },
+      _meta: {
+        "io.modelcontextprotocol/serverInfo": {
+          name: "lifecare-sandbox-source",
+          title: "LifeCare.ID® sandbox synthetic source (test fixture)",
+          version: VERSION,
+        },
+      },
+      instructions:
+        NOTICE + " Call list_scopes first: it names the resource owner and the one scope this " +
+        "token can read. Tokens are single scope. This is not the member MCP surface.",
+    });
+  }
   if (method === "ping") return rpcResult(id, {});
-  if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
+  // Optional capability lists this server does not offer. A gateway that asks for
+  // them (a gateway firewall does, after initialize) must get an empty list, not
+  // -32601: found 2026-10-27, when "method not found" on prompts/list failed every
+  // tools/call through the firewall although tools/list had worked.
+  if (method === "resources/list") return rpcResult(id, { resources: [], ...CACHEABLE });
+  if (method === "resources/templates/list") return rpcResult(id, { resourceTemplates: [], ...CACHEABLE });
+  if (method === "prompts/list") return rpcResult(id, { prompts: [], ...CACHEABLE });
+  if (method === "logging/setLevel") return rpcResult(id, {});
+  if (method === "tools/list") return rpcResult(id, { tools: TOOLS, ...CACHEABLE });
   if (method === "tools/call") {
     const result = await callTool(info, env, params);
     return result ? rpcResult(id, result) : rpcError(id, -32602, "unknown tool");
@@ -571,11 +623,82 @@ export async function handleRequest(request, env) {
   }
   const path = url.pathname.slice(PREFIX.length).replace(/\/+$/, "");
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  // The resource identifier is /sandbox-source/mcp with no slash. A slashed
+  // request would be challenged with a metadata URL whose `resource` does not
+  // match the URL requested (RFC 9728 section 3.3), so send it to the canonical
+  // path. 308 keeps the method and body of a POST.
+  if (path === "/mcp" && url.pathname.endsWith("/")) {
+    return new Response(null, {
+      status: 308, headers: { ...CORS, location: url.origin + MCP_RESOURCE_PATH + url.search },
+    });
+  }
   try {
     if (path === "/mcp") return await mcp(request, env);
     return await rest(request, env, url, path);
   } catch (e) {
-    if (e instanceof Refusal) return e.response();
+    if (e instanceof Refusal) {
+      // Only the MCP path is the resource the metadata document describes.
+      return e.response(path === "/mcp" ? { resourceMetadata: resourceMetadataUrl(url.origin) } : {});
+    }
     return json(500, { detail: "internal error", error: "internal_error" });
   }
+}
+
+// --------------------------------------------------------------------------
+// OAuth 2.0 Protected Resource Metadata (RFC 9728) for the MCP endpoint
+// --------------------------------------------------------------------------
+
+export const MCP_RESOURCE_PATH = PREFIX + "/mcp";
+export const WELL_KNOWN_PRM = "/.well-known/oauth-protected-resource";
+export const RESOURCE_DOCUMENTATION = "https://developers.lifecare.id/sandbox-data-source";
+
+// RFC 9728 section 3.1: the well-known segment goes between the host and the
+// resource's path. For https://lifecare.id/sandbox-source/mcp that is
+// https://lifecare.id/.well-known/oauth-protected-resource/sandbox-source/mcp.
+export function resourceMetadataUrl(origin) {
+  return origin + WELL_KNOWN_PRM + MCP_RESOURCE_PATH;
+}
+
+// Mounted by functions/.well-known/oauth-protected-resource/[[path]].js.
+//
+// Only the path form answers 200. The root form
+// (/.well-known/oauth-protected-resource) is a 404: by RFC 9728 section 3 it
+// names the metadata of a resource whose identifier is the bare origin, and
+// section 3.3 forbids a client to use a document whose `resource` differs from
+// the identifier it built the URL from. Our resource is the MCP endpoint, not
+// the origin. A client that follows the 401 challenge never needs the root
+// form, and one that probes tries the path form first (MCP authorization,
+// "Protected Resource Metadata Discovery Requirements").
+//
+// `resource` and the URLs are derived from the request's own origin, so a
+// Pages preview deployment names itself; in production that origin is
+// https://lifecare.id. `authorization_servers` is the sandbox issuer from the
+// Pages project variable LIFECAREID_SANDBOX_ORIGIN; unset, the answer is 503,
+// as for the data routes, because there is no authorization server to name.
+export async function handleProtectedResourceMetadata(request, env) {
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return json(405, { detail: "method not allowed", error: "method_not_allowed" },
+      { allow: "GET, HEAD, OPTIONS" });
+  }
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith(WELL_KNOWN_PRM)) {
+    return json(404, { detail: "not found", error: "not_found" });
+  }
+  const rest = url.pathname.slice(WELL_KNOWN_PRM.length).replace(/\/+$/, "");
+  if (rest !== MCP_RESOURCE_PATH) {
+    return json(404, { detail: "not found", error: "not_found" });
+  }
+  const issuer = sandboxOrigin(env);
+  if (!issuer) {
+    return new Refusal(503, "source_not_configured",
+      "the source has no sandbox to name as its authorization server (LIFECAREID_SANDBOX_ORIGIN is unset)").response();
+  }
+  return json(200, {
+    resource: url.origin + MCP_RESOURCE_PATH,
+    authorization_servers: [issuer],
+    bearer_methods_supported: ["header"],
+    scopes_supported: Object.keys(SCOPES),
+    resource_documentation: RESOURCE_DOCUMENTATION,
+  }, { "cache-control": "public, max-age=300" });
 }

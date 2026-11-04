@@ -613,19 +613,6 @@
         "title": "IdentityResponse",
         "type": "object"
       },
-      "IntrospectRequest": {
-        "properties": {
-          "token": {
-            "title": "Token",
-            "type": "string"
-          }
-        },
-        "required": [
-          "token"
-        ],
-        "title": "IntrospectRequest",
-        "type": "object"
-      },
       "Location": {
         "additionalProperties": false,
         "properties": {
@@ -1624,7 +1611,7 @@
   "info": {
     "description": "Patient-held consent and authorization layer. Mediates identity, consent, tokens, and revocation; never stores or relays health data. Contract: docs/contracts/ in this repo.",
     "title": "lifecare.id API",
-    "version": "0.24.1"
+    "version": "0.25.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -4302,10 +4289,52 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IntrospectRequest"
+                "properties": {
+                  "client_id": {
+                    "title": "Client Id",
+                    "type": "string"
+                  },
+                  "client_secret": {
+                    "title": "Client Secret",
+                    "type": "string"
+                  },
+                  "token": {
+                    "title": "Token",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "title": "IntrospectRequest",
+                "type": "object"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "properties": {
+                  "client_id": {
+                    "title": "Client Id",
+                    "type": "string"
+                  },
+                  "client_secret": {
+                    "title": "Client Secret",
+                    "type": "string"
+                  },
+                  "token": {
+                    "title": "Token",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "title": "IntrospectForm",
+                "type": "object"
               }
             }
           },
+          "description": "The token to check. RFC 7662 section 2.1: a form body with `token` (and optionally `client_id` and `client_secret`, client_secret_post); a JSON body with the same fields is accepted too.",
           "required": true
         },
         "responses": {
@@ -4353,6 +4382,18 @@
                           "const": true,
                           "title": "Active",
                           "type": "boolean"
+                        },
+                        "aud": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "The resource (RFC 8707 `resource`, RFC 7662 `aud`) the token was issued for, present only on a token the OAuth authorization code flow issued. A resource server must refuse a token whose `aud` names another resource.",
+                          "title": "Aud"
                         },
                         "consent_id": {
                           "title": "Consent Id",

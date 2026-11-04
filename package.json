@@ -1,6 +1,6 @@
 {
   "name": "lifecareid-sandbox-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "LifeCare.ID® sandbox kit: a synthetic health-data source behind a real consent flow.",

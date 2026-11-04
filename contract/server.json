@@ -4,7 +4,7 @@
   "title": "LifeCare.ID® sandbox synthetic source",
   "description": "Synthetic health data under real consent: a test fixture for agent governance pilots.",
   "version": "0.1.0",
-  "websiteUrl": "https://developers.lifecare.id/sandbox-data-source.html",
+  "websiteUrl": "https://developers.lifecare.id/sandbox-data-source",
   "repository": {
     "url": "https://github.com/enbarca/lifecareid-sandbox",
     "source": "github"

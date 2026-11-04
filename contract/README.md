@@ -3,8 +3,8 @@
 ## `openapi.json`
 
 The API of a LifeCare.ID® instance, as the hosted sandbox and production serve
-it. Fetched from `https://developers.lifecare.id/openapi.json` on 2026-10-06:
-**version 0.24.1**, 48 paths. It is a copy for convenience; the file at that
+it. Fetched from `https://developers.lifecare.id/openapi.json` on 2026-11-04:
+**version 0.25.0**, 48 paths. It is a copy for convenience; the file at that
 address is the authority, and this copy is refreshed when the kit is:
 
 ```bash
@@ -16,10 +16,12 @@ The three sandbox-only routes (`POST /v1/sandbox/clients`,
 `DELETE /v1/sandbox/clients/{client_id}`, `POST /v1/sandbox/test-identity`) are
 not in the contract: a production instance answers them `404`. They are
 documented at
-[developers.lifecare.id/sandbox.html](https://developers.lifecare.id/sandbox.html).
-The source's own routes (`/sandbox-source/...`) are not in it either: the
-source is a resource server, not the identity server, and its reference is
-[developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html).
+[developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox).
+The source's own routes (`/sandbox-source/...`) are not in it either, nor is
+the protected resource metadata route
+(`/.well-known/oauth-protected-resource/sandbox-source/mcp`): the source is a
+resource server, not the identity server, and its reference is
+[developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source).
 
 ## `server.json`
 

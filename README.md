@@ -15,7 +15,7 @@ source must, before a real one is involved.
 
 | Folder | What it holds |
 |---|---|
-| [`source/`](source/) | the reference data source, the code that runs at `https://lifecare.id/sandbox-source`. On every request it introspects the bearer token at the sandbox with its own client credentials, enforces scope and resource owner, writes the access to the owner's ledger, then serves. REST and MCP over the same handlers, and the tests, with the sandbox mocked |
+| [`source/`](source/) | the reference data source, the code that runs at `https://lifecare.id/sandbox-source`. On every request it introspects the bearer token at the sandbox with its own client credentials, enforces scope and resource owner, writes the access to the owner's ledger, then serves. REST and MCP over the same handlers, the protected resource metadata that leads a client to the sandbox, and the tests, with the sandbox mocked |
 | [`contract/`](contract/) | the public API contract (`openapi.json`, version in the README there) and `server.json` for the MCP Registry |
 | [`pages/`](pages/) | the reference deployment, a Cloudflare Pages Function, with the two project variables it reads and the rule for the one secret |
 | [`compose/`](compose/) | `docker compose up` runs the source on your machine, checking every token at the hosted sandbox with a client you registered there yourself |
@@ -54,11 +54,13 @@ licence section below.
 LIFECAREID_DEVACCESS_TOKEN=... node examples/run-loop.mjs
 ```
 
-3. Read the output: one line per step, the persona your synthetic person maps
-   to, the ledger line the read produced, and the two `401`s after revocation.
+3. Read the output: the discovery steps first (the source's challenge and the
+   metadata it points to), then one line per step, the persona your synthetic
+   person maps to, the ledger line the read produced, and the two `401`s after
+   revocation.
 
 The same steps as copy-and-paste `curl` are the walkthrough at
-[developers.lifecare.id/sandbox-data-source.html](https://developers.lifecare.id/sandbox-data-source.html).
+[developers.lifecare.id/sandbox-data-source](https://developers.lifecare.id/sandbox-data-source).
 
 ### The source on your machine
 
@@ -92,6 +94,37 @@ Found a hole, in the source or in what the sandbox lets it do? Open an issue
 here with the request shape and the response. Leave the token out. A finding
 in the identity server is handled from here too; it moves upstream.
 
+## Discovery
+
+A client does not have to be told where the sandbox is. The source publishes
+OAuth 2.0 protected resource metadata (RFC 9728) for its MCP endpoint, at
+`/.well-known/oauth-protected-resource/sandbox-source/mcp` on the host that
+serves it, so on the hosted source:
+
+```bash
+curl -s https://lifecare.id/.well-known/oauth-protected-resource/sandbox-source/mcp
+```
+
+The document names the endpoint (`resource`), the sandbox that issues its
+tokens (`authorization_servers`), the scopes the source understands and the
+documentation. The same URL comes back in the challenge of a `401`: an MCP
+request with no token answers `WWW-Authenticate: Bearer resource_metadata="..."`,
+and a request with a token the sandbox refuses adds `error="invalid_token"`. A
+client that follows the MCP authorization specification is therefore led from
+the endpoint to the sandbox without being told. The example client follows the
+same path before it asks for anything: it sends one request with no token,
+reads the challenge, fetches the document, checks that `resource` is the
+endpoint it called, and compares `authorization_servers` with the sandbox it
+will use. It never sends your developer access token to a server it was not
+told about: the token goes to `https://sandbox.lifecare.id` or to the origin
+you set as `SANDBOX`, and a source that names another sandbox stops the run
+before anything is sent.
+
+The source on your machine publishes its own document the same way, naming its
+own address as the resource and the sandbox in `LIFECAREID_SANDBOX_ORIGIN` as
+the authorization server. The words are in the
+[sandbox data source reference](https://developers.lifecare.id/sandbox-data-source).
+
 ## Tests
 
 ```bash
@@ -100,14 +133,14 @@ node --test
 
 Node 22 or newer, no dependencies. The source tests mock the sandbox and check
 what the source does with each answer it can get; the adapter tests check the
-local runtime; the brand test keeps the documents to the rules in
+local runtime and its metadata route; the brand test keeps the documents to the rules in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Links
 
 - Developer documentation: [developers.lifecare.id](https://developers.lifecare.id)
 - The paper: [lifecare.id/paper](https://lifecare.id/paper)
-- The sandbox and its data source: [sandbox](https://developers.lifecare.id/sandbox.html), [sandbox data source](https://developers.lifecare.id/sandbox-data-source.html)
+- The sandbox and its data source: [sandbox](https://developers.lifecare.id/sandbox), [sandbox data source](https://developers.lifecare.id/sandbox-data-source)
 
 ## Licence and trademark
 

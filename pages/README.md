@@ -3,15 +3,22 @@
 The hosted source at `https://lifecare.id/sandbox-source` is this function,
 mounted on the marketing site's Pages project. It runs on the edge, away from
 the sandbox's own host, so it keeps answering while that host moves. The
-function has no behaviour of its own: it imports `handleRequest` from
-`source/source.js` and calls it with the request and the Pages `env`.
+functions have no behaviour of their own: they import `handleRequest` and
+`handleProtectedResourceMetadata` from `source/source.js` and call them with the
+request and the Pages `env`.
 
 ```
-functions/sandbox-source/[[path]].js   everything under /sandbox-source/
+functions/sandbox-source/[[path]].js                          everything under /sandbox-source/
+functions/.well-known/oauth-protected-resource/[[path]].js    the OAuth protected resource metadata (RFC 9728)
 ```
+
+The second function serves `/.well-known/oauth-protected-resource/sandbox-source/mcp`,
+the document that names the sandbox as the authorization server and that the
+`401` challenge of the MCP endpoint points to. It reads the same
+`LIFECAREID_SANDBOX_ORIGIN` variable and names its own origin from the request.
 
 In the hosted site the module sits in a `libs/` folder beside `functions/`, so
-the import path there differs from the one in this kit; the file is otherwise
+the import paths there differ from the ones in this kit; the files are otherwise
 identical. To deploy your own copy, put `source/` where your Pages project can
 import it and run `npx wrangler pages deploy <site dir>` from the folder that
 holds `functions/`.
