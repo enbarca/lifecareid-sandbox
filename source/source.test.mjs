@@ -465,7 +465,7 @@ test("MCP: initialize, tools/list and ping answer under an active token, labelle
   for (const tool of list) assert.match(tool.description, /^TEST FIXTURE/);
   assert.deepEqual(list, TOOLS);
 
-  assert.deepEqual((await (await mcp({ jsonrpc: "2.0", id: 3, method: "ping" })).json()).result, {});
+  assert.deepEqual((await (await mcp({ jsonrpc: "2.0", id: 3, method: "ping" })).json()).result, { resultType: "complete" });
   const notified = await mcp({ jsonrpc: "2.0", method: "notifications/initialized" });
   assert.equal(notified.status, 202);
   assert.equal(await notified.text(), "");
@@ -549,7 +549,7 @@ test("MCP: protocol errors are JSON-RPC errors", async () => {
   const parse = await mcp("{not json");
   assert.equal(parse.status, 400);
   assert.equal((await parse.json()).error.code, -32700);
-  assert.equal((await (await mcp({ jsonrpc: "2.0", id: 1, method: "resources/list" })).json()).error.code, -32601);
+  assert.equal((await (await mcp({ jsonrpc: "2.0", id: 1, method: "completion/complete" })).json()).error.code, -32601);
   assert.equal((await (await mcp(call("delete_everything"))).json()).error.code, -32602);
   assert.equal((await (await mcp({ id: 1, method: "ping" })).json()).error.code, -32600);
   const got = await onRequest({
@@ -557,4 +557,90 @@ test("MCP: protocol errors are JSON-RPC errors", async () => {
     env: ENV,
   });
   assert.equal(got.status, 405);
+});
+
+// ---------------------------------------------------------- MCP: optional lists
+
+test("the optional capability lists answer empty, never method-not-found (gateways ask for them)", async () => {
+  sandbox();
+  for (const [method, key] of [
+    ["resources/list", "resources"],
+    ["resources/templates/list", "resourceTemplates"],
+    ["prompts/list", "prompts"],
+  ]) {
+    const res = await mcp({ jsonrpc: "2.0", id: 11, method });
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.error, undefined, method);
+    assert.deepEqual(body.result[key], []);
+  }
+  const level = await mcp({ jsonrpc: "2.0", id: 12, method: "logging/setLevel", params: { level: "info" } });
+  assert.deepEqual((await level.json()).result, { resultType: "complete" });
+  const unknown = await mcp({ jsonrpc: "2.0", id: 13, method: "completion/complete" });
+  assert.equal((await unknown.json()).error.code, -32601);
+});
+
+// ------------------------------------------------------------ MCP: 2026-07-28
+
+test("server/discover answers the modern era: versions, capabilities, serverInfo in _meta", async () => {
+  sandbox();
+  const res = await mcp({
+    jsonrpc: "2.0", id: "discover-1", method: "server/discover",
+    params: { _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                       "io.modelcontextprotocol/clientInfo": { name: "gateway", version: "4" },
+                       "io.modelcontextprotocol/clientCapabilities": {} } },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.error, undefined);
+  assert.equal(body.result.resultType, "complete");
+  assert.deepEqual(body.result.supportedVersions, ["2026-07-28"]);
+  assert.equal(body.result.cacheScope, "public");
+  assert.equal(typeof body.result.ttlMs, "number");
+  assert.deepEqual(body.result.capabilities, { tools: { listChanged: false } });
+  assert.equal(body.result._meta["io.modelcontextprotocol/serverInfo"].name, "lifecare-sandbox-source");
+  assert.match(body.result.instructions, /list_scopes first/);
+});
+
+test("a modern-stamped tools/call (per-request _meta, no initialize) is served like a legacy one", async () => {
+  const calls = sandbox();
+  const res = await mcp({
+    jsonrpc: "2.0", id: 2, method: "tools/call",
+    params: { name: "read_scope", arguments: { scope: "recovery", owner: OWNER },
+              _meta: { "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+                       "io.modelcontextprotocol/clientInfo": { name: "gateway", version: "4" },
+                       "io.modelcontextprotocol/clientCapabilities": {} } },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.error, undefined, JSON.stringify(body));
+  assert.notEqual(body.result.isError, true);
+  assert.ok(calls.some((c) => c.url.endsWith("/v1/token/introspect")));
+});
+
+test("initialize still negotiates the legacy era and answers 2026-07-28 when asked", async () => {
+  sandbox();
+  const legacy = await (await mcp({ jsonrpc: "2.0", id: 3, method: "initialize",
+    params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "x", version: "1" } } })).json();
+  assert.equal(legacy.result.protocolVersion, "2025-06-18");
+  const modern = await (await mcp({ jsonrpc: "2.0", id: 4, method: "initialize",
+    params: { protocolVersion: "2026-07-28", capabilities: {}, clientInfo: { name: "x", version: "1" } } })).json();
+  assert.equal(modern.result.protocolVersion, "2026-07-28");
+});
+
+test("every result carries resultType, and the list results carry ttlMs and cacheScope (2026-07-28)", async () => {
+  sandbox();
+  const list = await (await mcp({ jsonrpc: "2.0", id: 20, method: "tools/list" })).json();
+  assert.equal(list.result.resultType, "complete");
+  assert.equal(list.result.cacheScope, "public");
+  assert.equal(typeof list.result.ttlMs, "number");
+  for (const method of ["resources/list", "resources/templates/list", "prompts/list"]) {
+    const r = await (await mcp({ jsonrpc: "2.0", id: 21, method })).json();
+    assert.equal(r.result.resultType, "complete", method);
+    assert.equal(r.result.cacheScope, "public", method);
+  }
+  const called = await (await mcp(call("read_scope", { scope: "recovery", owner: OWNER }))).json();
+  assert.equal(called.result.resultType, "complete");
+  const ping = await (await mcp({ jsonrpc: "2.0", id: 23, method: "ping" })).json();
+  assert.equal(ping.result.resultType, "complete");
 });

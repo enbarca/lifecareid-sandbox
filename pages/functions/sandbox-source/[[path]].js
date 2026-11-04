@@ -1,7 +1,7 @@
 // Cloudflare Pages Function: everything under /sandbox-source/ on the Pages
 // site. The sandbox synthetic source, a zero-PHI reference data source for the
 // LifeCare.ID sandbox and a TEST FIXTURE
-// (https://developers.lifecare.id/sandbox-data-source.html).
+// (https://developers.lifecare.id/sandbox-data-source).
 //
 // It runs on the edge, away from the sandbox's own host, so it keeps answering
 // while that host moves. All behaviour lives in source/source.js; this file
