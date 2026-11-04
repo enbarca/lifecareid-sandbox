@@ -20,8 +20,13 @@ LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/server.mjs
 ```
 
 Each registers sandbox clients and a synthetic person at run time, and deletes
-the clients at the end. The server example needs the hosted sandbox at 0.27.0 or later. Neither prints a secret: codes and tokens are cut to ten
-characters.
+the clients at the end. The server example needs the hosted sandbox at 0.27.0 or
+later. Neither prints a secret: codes and tokens are cut to ten characters.
+
+Each takes about five seconds of machine time against the hosted sandbox
+(measured 2026-11-04). The reading takes longer; a cold reader took ten to twenty
+minutes for both. Wiring the client half into your own agent, with a redirect
+receiver, is the afternoon.
 
 ## The client half, `agent.mjs`
 
@@ -38,6 +43,11 @@ authorize URL and takes back what they send. Here a synthetic identity's
 session cookie fetches the grant page on the sandbox origin and posts the yes,
 the way the sandbox walkthrough does in place of the passkey tap. The library
 never renders it. The revoke is the data-rights panel's API.
+
+A real agent needs a redirect receiver at its registered redirect URI, which is
+what takes the place of that stand-in; see
+[the redirect receiver](../../lib/person-managed-auth/README.md#the-redirect-receiver)
+in the library README.
 
 ## The server half, `server.mjs`
 

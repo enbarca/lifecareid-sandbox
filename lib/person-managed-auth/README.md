@@ -1,7 +1,9 @@
 # Person-managed authorization
 
-*Draft 1. Follows the hosted sandbox as it behaves on 2026-11-04. The open agent
-authorization profile is planned for 2026-12-01 and may change any shape marked
+*Draft 1. Follows the hosted sandbox as it behaves on 2026-11-04. "The profile"
+below is the open agent authorization profile: a written specification of this
+flow that other implementations can follow, planned for 2026-12-01 and not yet
+published. Draft 1 means the shapes may change when it is; each one is marked
 `profile draft 1 may change this` in the code.*
 
 A library that lets an agent ask a person once, through a standard, keep the
@@ -26,13 +28,25 @@ never renders it.
 
 You need a client registered at the authorization server. For the hosted sandbox
 that is `POST /v1/sandbox/clients` with your developer access token
-([developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox)); the
-examples do it for you.
+([developers.lifecare.id/sandbox](https://developers.lifecare.id/sandbox)), with
+`http://127.0.0.1:4000/callback` among its `redirect_uris`: the redirect URI you
+configure below must be one of them, byte for byte, and `localhost` and
+`127.0.0.1` are different strings. The examples register a client for you.
+
+From a clone to the last line of both examples takes about five seconds of
+machine time each against the hosted sandbox (measured 2026-11-04), and ten to
+twenty minutes with the reading (a cold reader's walk, the same day). Wiring the
+client half into your own agent, with the receiver below, is the afternoon.
 
 ### An agent
 
 ```js
 import { createAgent, PersonStopped } from "@lifecareid/person-managed-auth/client";
+
+// Called when the person has to be asked. Show them ask.authorizeUrl; the yes
+// happens there, on the authorization server's own origin. Return the URL they
+// are redirected to, or { code, state, iss }. The receiver below does it.
+const ask = async (ask) => await getTheCallbackFromThePerson(ask.authorizeUrl);
 
 const agent = createAgent({
   resource: "https://lifecare.id/sandbox-source/mcp",  // the MCP endpoint you read from
@@ -44,12 +58,11 @@ const agent = createAgent({
 });
 
 try {
-  const { result, receipt } = await agent.callTool("read_scope", { scope: "daily", owner }, {
-    // Called when the person has to be asked. Show them ask.authorizeUrl; the yes
-    // happens there, on the authorization server's origin. Return the URL they
-    // are redirected to, or { code, state, iss }.
-    ask: async (ask) => await getTheCallbackFromThePerson(ask.authorizeUrl),
-  });
+  // The first call asks the person (once). The sandbox source's list_scopes tool
+  // names the owner: the DID of the person whose grant this is.
+  const scopes = await agent.callTool("list_scopes", {}, { ask });
+  const owner = scopes.result.structuredContent.token.resource_owner;
+  const { result, receipt } = await agent.callTool("read_scope", { scope: "daily", owner }, { ask });
   console.log(receipt);                  // { consent_id, ledger_entry_hash, access_recorded, scope, tool, at }
 } catch (e) {
   if (e instanceof PersonStopped) { /* the person revoked; agent.stopped is aborted */ }
@@ -61,6 +74,38 @@ agent.showMyReceipts();                  // consent ids and hashes, never a valu
 `callTool` returns `{ ok: true, result, receipt }`, or `{ ok: false, ask }` when
 the person has to be asked and you passed no `ask`; then call `finishAuth` with
 the callback and call again. Details are in the table below.
+
+#### The redirect receiver
+
+The redirect URI is yours to serve. A real agent needs a listener at it that
+takes what the sandbox redirects the person to and hands it back; `finishAuth`
+checks that `state` is the one it sent and that `iss` is the issuer it was
+configured for, so the receiver only has to pass the URL on. A no from the
+person arrives as `error=access_denied` and `finishAuth` throws `PersonDeclined`.
+
+```js
+import http from "node:http";
+
+function getTheCallbackFromThePerson(authorizeUrl) {
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      const url = new URL(req.url, "http://127.0.0.1:4000");
+      if (url.pathname !== "/callback") { res.writeHead(404, { connection: "close" }); return res.end(); }
+      res.writeHead(200, { connection: "close" });   // so a keep-alive client cannot reuse a closed listener
+      res.end("You can close this tab.");
+      server.close();
+      resolve(url.href);
+    });
+    server.listen(4000, "127.0.0.1", () => {
+      console.log("Open this as the person:", authorizeUrl);   // or open it in their browser
+    });
+  });
+}
+```
+
+Start listening before you show the URL, as above. In the examples, a synthetic
+identity's session posts the yes and the callback is read from the answer, so no
+listener is needed there.
 
 ### A server
 
@@ -112,6 +157,23 @@ Until the package is published, the snippets' imports
 (`@lifecareid/person-managed-auth/client`, `/server`, `/node`, `/pages`) go by
 relative path: `lib/person-managed-auth/src/client.js`, `server.js`, `node.js`
 and `pages.js`, as the examples do.
+
+### From your own project, before it is published
+
+Install the library from the clone by path, and the package imports above then
+resolve in your project:
+
+```bash
+git clone https://github.com/enbarca/lifecareid-sandbox
+npm ci --prefix lifecareid-sandbox/lib/person-managed-auth     # once: the SDK, the client half's dependency
+cd my-agent && npm install ../lifecareid-sandbox/lib/person-managed-auth
+```
+
+npm links the folder rather than copying it, so the SDK is found in the kit's
+own `node_modules`: without the second line, importing `/client` fails with
+`ERR_MODULE_NOT_FOUND` for `@modelcontextprotocol/sdk` (the server half needs
+none). Checked on 2026-11-04 with Node 23 and npm 10; status: not published, so
+a published install is not yet possible.
 
 In both, the person's yes and revoke are made with a synthetic identity's
 session, as the sandbox walkthrough does, and the example says so where it
@@ -219,7 +281,7 @@ applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token`,
 | Several scopes in one token | refused by the issuer. The client asks for one scope and steps up for the next; the union is the profile's question |
 | The receipt's shape | follows the hosted sandbox source today (`consent_id`, `access_recorded`, `ledger_entry_hash` in the body of the answer). The profile defines it in draft 1 |
 | The introspection and ledger-write paths | the paths LifeCare.ID® uses under the issuer (`/v1/token/introspect`, `/v1/access/record`); overridable on the server |
-| Resources a sandbox client can name | the hosted sandbox at 0.27.0 or later accepts a resource a developer registered (`resources` on `POST /v1/sandbox/clients`) as the `resource` of an `/authorize` request from any of that developer's own clients, so a server on your machine takes its token through the authorization code flow, and the token's `aud` is its loopback URL. Register the string the library holds (`pma.resource`) byte for byte: the library lower-cases the host and drops a default port and a trailing slash, and the sandbox compares the stored string exactly. Clients registered before 2026-11-04 carry no owner and cannot hold a resource. Another developer can register the same URL for their own clients, so decide which clients you accept with `grantees` |
+| Resources a sandbox client can name | the hosted sandbox at 0.27.0 or later (live since 2026-11-04) accepts a resource a developer registered (`resources` on `POST /v1/sandbox/clients`; `https` anywhere or `http` on loopback, matched byte for byte) as the `resource` of an `/authorize` request from any of that developer's own clients, so a server on your machine takes its token through the authorization code flow, and the token's `aud` is its loopback URL. Register the string the library holds (`pma.resource`) byte for byte: the library lower-cases the host and drops a default port and a trailing slash, and the sandbox compares the stored string exactly. Clients registered before 2026-11-04 carry no owner and cannot hold a resource. Another developer can register the same URL for their own clients, so decide which clients you accept with `grantees` |
 | Which clients a server accepts | `grantees` is a required choice with no default. Once every authorization-code token carries an audience, the profile can say whether a data token may lack one at all |
 | Revoked and expired | the standard 401 does not tell them apart. The client uses its own clock for a token it has seen expire, and asks the issuer about its own token when a token is refused on its first use |
 | Python, other languages | a later row |
@@ -230,7 +292,7 @@ Apache-2.0, with the kit's NOTICE. One dependency, the official
 `@modelcontextprotocol/sdk` 1.32.2 (MIT), used by the client half only; the
 server half needs none. Its own dependencies are MIT, ISC, BSD-2-Clause and
 BSD-3-Clause. Nothing in the library or the SDK's client path phones home. The
-package is private and unpublished; the name is confirmed at publication.
+package is not yet published; the name is confirmed at publication.
 
 LifeCare.ID® is a registered trademark of Enbarca Inc dba HCVC.net and is not
 licensed by the Apache License.
