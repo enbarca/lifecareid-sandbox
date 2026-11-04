@@ -19,8 +19,8 @@ LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/agent.mjs
 LIFECAREID_DEVACCESS_TOKEN=... node examples/person-managed-auth/server.mjs
 ```
 
-Each registers a sandbox client and a synthetic person at run time, and deletes
-the client at the end. Neither prints a secret: codes and tokens are cut to ten
+Each registers sandbox clients and a synthetic person at run time, and deletes
+the clients at the end. The server example needs the hosted sandbox at 0.27.0 or later. Neither prints a secret: codes and tokens are cut to ten
 characters.
 
 ## The client half, `agent.mjs`
@@ -43,21 +43,48 @@ never renders it. The revoke is the data-rights panel's API.
 
 The process runs a small MCP server on your machine, `synthetic-mcp.mjs`, that
 holds one synthetic fact and serves it through the library's server half, then
-walks a caller through it: the 401 and the metadata that lead to the sandbox, a
-read under a grant with its receipt in the person's ledger, the 403 step-up for
-a scope the token does not cover, a token issued to a client the server does not
-accept, the person's revoke, and the refusal at the very next request.
+walks a caller through the whole flow: the 401 and the metadata that lead to the
+sandbox, the authorization code flow with the server as the resource, a read
+under the grant with its receipt in the person's ledger, the 403 step-up for a
+scope the token does not cover (the caller asks for that scope alone), a token
+issued to a client the server does not accept, the person's revoke, and the
+refusal at the very next request.
 
-One difference from the client example: the grant here is made through the
-sandbox's API path (steps 3 and 4 of the sandbox guide), not through the
-authorization code flow. The hosted sandbox issues authorization-code tokens
-only for the resources it lists, and a server on your machine is not one of
-them. The token is the same kind, single scope and short lived; it has no
-audience, which the server accepts. The tests cover the audience check against
-a double of the sandbox. The kit's Compose file is not used by either example: the server half runs in
-this process, which is the natural runtime for a library, and the client half
-cannot read from the Compose source, because the hosted issuer refuses a
-loopback resource at `/authorize` for the same reason.
+How a server on your machine takes part. The hosted sandbox at 0.27.0 or later
+accepts, as the `resource` of an `/authorize` request, an address that a client of
+yours registered with `resources` on `POST /v1/sandbox/clients`. So the example
+listens first (its port is chosen by the system), computes its resource string
+the way the library compares it, `pma.resource`, and registers that exact string
+on its own client. The caller is a second client, registered with the same
+developer access token, and the token it gets has the server's loopback URL as
+its `aud`, which the server checks against the real issuer. The person's yes is
+the one stand-in, as in the client example.
+
+Two things to get right when you do this in your own server:
+
+- Register the string the library holds, byte for byte. The library lower-cases
+  the host and drops a default port and a trailing slash, and the sandbox
+  compares the stored string exactly, so `http://LOCALHOST:8787/mcp` or
+  `http://127.0.0.1:8787/mcp/` registers and then never matches. The example
+  asserts `pma.resource` equals what it registered.
+- Clients registered before 2026-11-04 carry no owner and cannot hold or use a
+  resource on the hosted sandbox. Register new ones with your developer access
+  token, as the examples do at run time.
+
+Another developer can register the same address on their own clients and obtain
+a token whose `aud` is your server, so your server still decides which clients it
+accepts, by the token's grantee (`grantees`, required). The example's third
+client shows the refusal: the same developer's other client may ask for the
+resource, and the server turns its token away.
+
+The example no longer uses the sandbox's API path (steps 3 and 4 of the sandbox
+guide) and has no fallback to it. Against a sandbox older than 0.27.0 the
+registration of `resources` is refused or `/authorize` answers `invalid_target`,
+and the example says so and stops. A local sandbox you run yourself has no
+developer gate and so no owners: a resource registered on any of its clients is
+accepted. The kit's Compose file is not used by either example: the server half
+runs in this process, which is the natural runtime for a library, and the client
+example reads from the hosted source.
 
 The examples import the library from its folder, by relative path, because the
 package is unpublished. Once it is, the imports in the README's snippets

@@ -98,7 +98,9 @@ Two, in [`examples/person-managed-auth/`](../../examples/person-managed-auth/),
 each runnable against the hosted sandbox with a developer access token. They
 register a sandbox client and a synthetic person at run time and delete the
 client at the end. Both close the loop: discover, the person grants, read, the
-receipt, the person revokes, the next read is refused.
+receipt, the person revokes, the next read is refused. The server example
+registers its own loopback address as a resource and takes its grant through the
+authorization code flow too, which needs the hosted sandbox at 0.27.0 or later.
 
 ```bash
 npm ci --prefix lib/person-managed-auth                                       # once: installs the SDK
@@ -217,7 +219,7 @@ applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token`,
 | Several scopes in one token | refused by the issuer. The client asks for one scope and steps up for the next; the union is the profile's question |
 | The receipt's shape | follows the hosted sandbox source today (`consent_id`, `access_recorded`, `ledger_entry_hash` in the body of the answer). The profile defines it in draft 1 |
 | The introspection and ledger-write paths | the paths LifeCare.ID® uses under the issuer (`/v1/token/introspect`, `/v1/access/record`); overridable on the server |
-| Resources a sandbox client can name | the hosted sandbox issues authorization-code tokens only for the resources it lists, so a server on your machine uses the API path to obtain a token in its example |
+| Resources a sandbox client can name | the hosted sandbox at 0.27.0 or later accepts a resource a developer registered (`resources` on `POST /v1/sandbox/clients`) as the `resource` of an `/authorize` request from any of that developer's own clients, so a server on your machine takes its token through the authorization code flow, and the token's `aud` is its loopback URL. Register the string the library holds (`pma.resource`) byte for byte: the library lower-cases the host and drops a default port and a trailing slash, and the sandbox compares the stored string exactly. Clients registered before 2026-11-04 carry no owner and cannot hold a resource. Another developer can register the same URL for their own clients, so decide which clients you accept with `grantees` |
 | Which clients a server accepts | `grantees` is a required choice with no default. Once every authorization-code token carries an audience, the profile can say whether a data token may lack one at all |
 | Revoked and expired | the standard 401 does not tell them apart. The client uses its own clock for a token it has seen expire, and asks the issuer about its own token when a token is refused on its first use |
 | Python, other languages | a later row |

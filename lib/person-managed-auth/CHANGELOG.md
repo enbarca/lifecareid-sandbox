@@ -1,5 +1,18 @@
 # Changelog
 
+## Examples, after hosted sandbox 0.27.0 (2026-11-04)
+
+No change to the library. The server example now lists first, registers its
+canonical resource string (`pma.resource`) on its own client with `resources`,
+registers the caller as a second client under the same developer access token,
+and takes its grant through the authorization code flow: the token's `aud` is
+the server's loopback URL, so the audience check runs against the real issuer
+and not a double. The walkthrough path (`/v1/consent/grant`, `/v1/token`) is no
+longer used by it. The sentence that the hosted sandbox refuses a loopback
+resource is no longer true as of hosted sandbox 0.27.0: a developer registers
+it. Register the string the library holds, byte for byte; clients registered
+before 2026-11-04 carry no owner and cannot hold a resource.
+
 ## 0.1.0, draft 1 (unreleased, private)
 
 First build. Every shape follows what the hosted sandbox does on 2026-11-04,
