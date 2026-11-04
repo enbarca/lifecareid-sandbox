@@ -49,14 +49,37 @@ async function call(method, path, { bearer, basic, cookie, body } = {}) {
 
 // ---- the developer ----------------------------------------------------------
 
-export async function registerClient(name) {
-  const r = await call("POST", "/v1/sandbox/clients", { bearer: DEVACCESS || undefined, body: { name, redirect_uris: [REDIRECT_URL] } });
+// Every client this process registered and has not yet deleted, so a failure
+// halfway through registration still cleans up after itself.
+const live = new Map();
+
+// `resources` (one to five absolute URLs) names your own server as a resource a
+// token can be issued for: the hosted sandbox accepts it from 0.27.0. Register
+// the string your server names, byte for byte (see server.mjs).
+export async function registerClient(name, { resources } = {}) {
+  const body = { name, redirect_uris: [REDIRECT_URL] };
+  if (resources) body.resources = resources;
+  const r = await call("POST", "/v1/sandbox/clients", { bearer: DEVACCESS || undefined, body });
   if (r.status !== 200) {
-    ok(false, `register a client: ${r.status} ${r.json?.detail ?? ""}`);
+    ok(false, `register a client: ${r.status} ${typeof r.json?.detail === "string" ? r.json.detail : ""}`);
     if (r.status === 401 && !DEVACCESS) say("     the hosted sandbox needs LIFECAREID_DEVACCESS_TOKEN (https://app.lifecare.id/devaccess)");
+    if (r.status === 422 && resources) say("     a sandbox older than 0.27.0 does not take `resources`; use the hosted one, or a local one at 0.27.0 or later");
+    await deleteAll();
     process.exit(1);
   }
-  return { id: r.json.client_id, secret: r.json.client_secret };
+  const client = { id: r.json.client_id, secret: r.json.client_secret };
+  live.set(client.id, client);
+  return client;
+}
+
+// What a client is registered for, read back with its own secret (and, on the
+// hosted sandbox, the developer access token as the lc_dev cookie). Never the
+// secret, never who registered it.
+export async function getClient(client) {
+  const r = await call("GET", `/v1/sandbox/clients/${encodeURIComponent(client.id)}`, {
+    basic: `${client.id}:${client.secret}`, cookie: DEVACCESS ? `lc_dev=${DEVACCESS}` : undefined,
+  });
+  return { status: r.status, resources: r.json?.resources ?? null };
 }
 
 export async function deleteClient(client) {
@@ -66,13 +89,18 @@ export async function deleteClient(client) {
     basic: `${client.id}:${client.secret}`, cookie: DEVACCESS ? `lc_dev=${DEVACCESS}` : undefined,
   });
   ok(r.status === 200, `delete the client ${client.id}: ${r.status}`);
+  live.delete(client.id);
+}
+
+export async function deleteAll() {
+  for (const client of [...live.values()]) await deleteClient(client);
 }
 
 // ---- the synthetic person ---------------------------------------------------
 
 export async function mintPerson() {
   const r = await call("POST", "/v1/sandbox/test-identity", { bearer: DEVACCESS || undefined, body: {} });
-  if (r.status !== 200) { ok(false, `mint a synthetic person: ${r.status}`); process.exit(1); }
+  if (r.status !== 200) { ok(false, `mint a synthetic person: ${r.status}`); await deleteAll(); process.exit(1); }
   return { did: r.json.did, session: r.json.session_token };
 }
 
@@ -133,20 +161,4 @@ export async function readsInLedger(person) {
 // The line the person's own ledger shows for the newest read.
 export async function newestReadInLedger(person) {
   return (await readsInLedger(person)).at(-1) ?? null;
-}
-
-// The walkthrough path (steps 3 and 4 of the sandbox guide): the person's
-// session makes the grant and asks for the token directly.
-export async function grantAndToken(person, client, { scope, purpose }) {
-  const granted = await call("POST", "/v1/consent/grant", {
-    bearer: person.session,
-    body: { subject_did: person.did, grantee: { name: "Person-managed authorization example", id: client.id },
-      scopes: [scope], purpose: { text: purpose }, duration_days: 1 },
-  });
-  if (granted.status !== 200) throw new Error(`grant: ${granted.status} ${granted.json?.detail ?? ""}`);
-  const issued = await call("POST", "/v1/token", {
-    bearer: person.session, body: { subject_did: person.did, scope, purpose, requester: client.id },
-  });
-  if (issued.status !== 200) throw new Error(`token: ${issued.status} ${issued.json?.detail ?? ""}`);
-  return { consentId: granted.json.consent_id, token: issued.json.access_token };
 }
