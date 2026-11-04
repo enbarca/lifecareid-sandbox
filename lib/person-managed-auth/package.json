@@ -1,0 +1,20 @@
+{
+  "name": "@lifecareid/person-managed-auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Person-managed authorization for agents and the servers they read from. Draft 1. LifeCare.ID® is its first implementation.",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22" },
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./server": "./src/server.js",
+    "./node": "./src/node.js",
+    "./pages": "./src/pages.js"
+  },
+  "scripts": { "test": "node --test" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  }
+}

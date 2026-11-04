@@ -8,9 +8,10 @@ import { test } from "node:test";
 const ROOT = new URL("../", import.meta.url);
 const DOCS = [
   "README.md", "CONTRIBUTING.md", "NOTICE", "pages/README.md", "compose/README.md",
-  "contract/README.md", "examples/README.md",
+  "contract/README.md", "examples/README.md", "lib/person-managed-auth/README.md",
+  "lib/person-managed-auth/CHANGELOG.md", "examples/person-managed-auth/README.md",
 ];
-const DATA = ["package.json", "contract/server.json", "compose/docker-compose.yml"];
+const DATA = ["package.json", "contract/server.json", "compose/docker-compose.yml", "lib/person-managed-auth/package.json"];
 const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u;
 
 const read = (path) => readFileSync(new URL(path, ROOT), "utf8");

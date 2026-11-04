@@ -26,8 +26,11 @@ repository, is welcome here too and is taken upstream.
   two handler test files and `contract/openapi.json`: they are copied from
   upstream by `scripts/sync-upstream.mjs`, which records the commit in
   `sync/UPSTREAM`, so a hand edit to them would be overwritten by the next sync.
-- Run `node --test` before opening a pull request. Node 22 or newer, no
-  dependencies.
+- Run `node --test` before opening a pull request. Node 22 or newer. The kit has
+  no dependencies; the library in `lib/person-managed-auth/` has one, the
+  official MCP SDK, and its client tests skip until you run
+  `npm ci --prefix lib/person-managed-auth`. The library is not covered by the
+  sync script and its folder is not in `sync/map.json`.
 - Documents follow a few rules the tests enforce: no em dash, no exclamation
   point, no emoji, sentence case, and the mark written `LifeCare.ID®` wherever
   it appears as text.
