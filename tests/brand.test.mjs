@@ -1,4 +1,4 @@
-// The documents keep the rules the README states: no em dash, no exclamation
+// The documents keep the rules the README states: no em or en dash, no exclamation
 // point, no emoji, and the mark written LifeCare.ID® wherever it is text.
 // Code blocks and inline code are not text. Run: node --test (from the kit root)
 import assert from "node:assert/strict";
@@ -20,7 +20,7 @@ const prose = (text) => text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g
 for (const path of DOCS) {
   test(`${path} keeps the brand rules`, () => {
     const text = read(path);
-    assert.ok(!text.includes("—"), `${path}: an em dash`);
+    assert.ok(!/[\u2014\u2013]/.test(text), `${path}: an em or en dash`);
     const p = prose(text);
     assert.ok(!p.replace(/!\[/g, "").includes("!"), `${path}: an exclamation point`);
     assert.ok(!EMOJI.test(p), `${path}: an emoji`);
@@ -33,7 +33,7 @@ for (const path of DOCS) {
 for (const path of DATA) {
   test(`${path} carries the mark and no em dash`, () => {
     const text = read(path);
-    assert.ok(!text.includes("—"), `${path}: an em dash`);
+    assert.ok(!/[\u2014\u2013]/.test(text), `${path}: an em or en dash`);
     for (const m of text.matchAll(/LifeCare\.ID(?!®)/g)) {
       // LIFECAREID_* variable names are not the mark; the regex is case-sensitive.
       assert.fail(`${path}: LifeCare.ID without the mark near ${JSON.stringify(text.slice(m.index - 20, m.index + 15))}`);
