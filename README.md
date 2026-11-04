@@ -239,6 +239,7 @@ the line that says so.
 ## Links
 
 - Developer documentation: [developers.lifecare.id](https://developers.lifecare.id)
+- Working in this repository with a coding agent: [AGENTS.md](AGENTS.md)
 - The paper: [lifecare.id/paper](https://lifecare.id/paper)
 - The sandbox and its data source: [sandbox](https://developers.lifecare.id/sandbox), [sandbox data source](https://developers.lifecare.id/sandbox-data-source)
 
