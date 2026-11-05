@@ -4,10 +4,11 @@
 each answer against the contract: discovery, register, mint, grant, token, REST read, a
 refused read of an ungranted scope, MCP read, ledger, revoke, the replay of the
 revoked token on both faces, and the client's deletion. Node 22 or newer, no
-dependencies. It uses the sandbox's API path (a grant and a token made with a
-synthetic person's session), for scripts and CI with no browser; the client
-it registers names the source as a resource, so the token carries that audience.
-The agent flow a real client runs, with the person's own yes, is in [`person-managed-auth/`](person-managed-auth/).
+dependencies. It takes its token through the authorization code flow, with the person's
+yes given through the synthetic session cookie, so no browser is needed; only
+the grant uses the session API. The client it registers names the source as a
+resource, so the token carries that audience. The agent flow a real client
+runs, with the person's own yes, is in [`person-managed-auth/`](person-managed-auth/).
 
 ## Against the hosted sandbox
 

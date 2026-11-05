@@ -142,9 +142,11 @@ the same flow from the `401`, and its
 token is bound to the resource it asked for, so your source's address has to be
 a resource of the client. Register it on the agent's client with `resources`
 (the issuer's own-resource registry, contract 0.27.0 and later), with the
-redirect URI the agent will use. The issuer honours the resources a developer
+redirect URI the agent will use. The sandbox issuer honours the resources a developer
 registered on their own client as well as the operator's allow-list, so your
-address is accepted without anyone adding it to a list:
+address is accepted without anyone adding it to a list. The registry is
+sandbox-only (production honours the operator's allow-list alone), and a
+reserved address answers 403:
 
 ```bash
 curl -s -X POST https://sandbox.lifecare.id/v1/sandbox/clients \

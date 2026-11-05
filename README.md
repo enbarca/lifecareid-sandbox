@@ -109,9 +109,11 @@ from the LifeCare.ID® repository (`sync/UPSTREAM` records the commit), and the
 hosted source is 0.3.2 too. It exposes `www-authenticate`, `mcp-session-id` and
 `mcp-protocol-version` to pages on other origins
 (`Access-Control-Expose-Headers`), names one scope on every `401`, a refused
-token included, and refuses a token with no audience. The issuer honours the
-resources a developer registered on their own client as well as the operator's
-allow-list (the own-resource registry, contract 0.27.0 and later). The
+token included, and refuses a token with no audience. The sandbox
+issuer honours the resources a developer registered on their own client as
+well as the operator's allow-list (the own-resource registry, contract 0.27.0
+and later). The registry is sandbox-only: production honours the operator's
+allow-list alone, and reserved addresses answer 403. The
 `contract/` copy is 0.27.2, the version at the commit synced.
 
 ## Try to break it

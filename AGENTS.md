@@ -1,6 +1,6 @@
 # Instructions for a coding agent working in this repository
 
-Written 2026-11-04, against the hosted sandbox at 0.27.2 and the source at 0.3.2.
+Written 2026-11-05, against the hosted sandbox at 0.27.2 and the source at 0.3.2.
 For anything this file does not say, read the README of the folder you are in,
 then `https://developers.lifecare.id/llms.txt` and
 `https://developers.lifecare.id/openapi.json` (the authority for the API).
@@ -133,8 +133,10 @@ library, the examples, or an agent or server built on it.
   every `401`, `WWW-Authenticate` exposed to a page on another origin, and a
   token with no audience refused.
 - `contract/openapi.json` is 0.27.2, the version at the commit synced.
-- The sandbox's own metadata and token endpoints do not answer a browser on
-  another origin yet, so a browser-only agent cannot finish the flow.
+- Since 2026-11-05 the sandbox issuer answers a browser on another origin on
+  five routes: the two discovery documents, the JWKS, `/token` and `/revoke`.
+  Client registration and introspection still do not, so register the client
+  from a script or a server, not from a page.
 - Clients registered before the 0.27.0 deploy on 2026-11-04 carry no owner and
   cannot hold a resource; register new ones with your developer access token.
 - The open agent authorization profile is planned for 2026-12-01 and not yet
