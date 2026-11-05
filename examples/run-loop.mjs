@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // The whole loop against a LifeCare.ID® sandbox, in one run: read the source's
 // challenge and follow it to the sandbox (OAuth protected resource metadata,
-// RFC 9728), register a client, mint a synthetic person, grant two scopes, get a token for one, read over
+// RFC 9728), register a client, mint a synthetic person, grant one scope, get a token for it
+// through the authorization code flow (PKCE, the person's yes, POST /token), read over
 // REST and over MCP, provoke the refusal for a scope that was not granted, see
 // the read in the person's ledger, revoke, and watch the next read fail on both
 // faces, with the error the challenge names. Then delete the client.
@@ -23,6 +24,8 @@
 // not the developer access token, not the client secret, not the session, not
 // the data-access token. Exit code 0 when every step answered as the contract
 // says, 1 otherwise. Node 22 or newer, no dependencies.
+import crypto from "node:crypto";
+
 const SANDBOX_GIVEN = (process.env.SANDBOX || "").replace(/\/+$/, "");
 const SANDBOX = SANDBOX_GIVEN || "https://sandbox.lifecare.id";
 const SOURCE = (process.env.SOURCE || "https://lifecare.id/sandbox-source").replace(/\/+$/, "");
@@ -109,9 +112,11 @@ if (metadataUrl) {
 console.log("");
 
 // 1. register a client (the hosted sandbox needs the developer access token)
+const REDIRECT = "http://localhost:4000/callback";
+const RESOURCE = `${SOURCE}/mcp`;   // the token's audience (RFC 8707); registered on the client below
 const registered = await call("POST", `${SANDBOX}/v1/sandbox/clients`, {
   bearer: DEVACCESS || undefined,
-  body: { name: "Sandbox kit loop", redirect_uris: ["http://localhost:4000/callback"] },
+  body: { name: "Sandbox kit loop", redirect_uris: [REDIRECT], resources: [RESOURCE] },
 });
 if (!report("register a client", registered, 200, "client_id " + (registered.json?.client_id ?? ""))) {
   if (registered.status === 401 && !DEVACCESS) {
@@ -126,21 +131,56 @@ const minted = await call("POST", `${SANDBOX}/v1/sandbox/test-identity`, { beare
 if (!report("mint a synthetic identity", minted, 200, minted.json?.did ?? "")) process.exit(1);
 const { did, session_token: session } = minted.json;
 
-// 3. the person grants the client two scopes
+// 3. the person grants the client the scope (the code flow below reuses this grant:
+//    one scope, the same purpose)
 const granted = await call("POST", `${SANDBOX}/v1/consent/grant`, {
   bearer: session,
   body: { subject_did: did, grantee: { name: "Sandbox kit loop", id: clientId },
-    scopes: [SCOPE, "daily"], purpose: { text: PURPOSE }, duration_days: 1 },
+    scopes: [SCOPE], purpose: { text: PURPOSE }, duration_days: 1 },
 });
-if (!report("grant recovery and daily", granted, 200, granted.json?.consent_id ?? "")) process.exit(1);
+if (!report("grant recovery", granted, 200, granted.json?.consent_id ?? "")) process.exit(1);
 const consentId = granted.json.consent_id;
 
-// 4. a token for one scope
-const issued = await call("POST", `${SANDBOX}/v1/token`, {
-  bearer: session, body: { subject_did: did, scope: SCOPE, purpose: PURPOSE, requester: clientId },
+// 4. a token for one scope, from the authorization code flow, as an app gets it in
+//    production (POST /v1/token with a session is issued only against the person's
+//    own grant). The person's yes is given with the synthetic session cookie.
+const b64url = (buf) => Buffer.from(buf).toString("base64url");
+const verifier = b64url(crypto.randomBytes(48));
+const challenge = b64url(crypto.createHash("sha256").update(verifier).digest());
+const state = b64url(crypto.randomBytes(12));
+const cookie = `${SANDBOX.startsWith("https:") ? "__Host-" : ""}lc_id_session=${session}`;
+const authorizeUrl = `${SANDBOX}/authorize?` + new URLSearchParams({
+  response_type: "code", client_id: clientId, redirect_uri: REDIRECT, state,
+  code_challenge: challenge, code_challenge_method: "S256", scope: SCOPE, resource: RESOURCE, purpose: PURPOSE,
 });
-if (!report(`token for ${SCOPE}`, issued, 200, "expires " + (issued.json?.expires_at ?? ""))) process.exit(1);
+const question = await fetch(authorizeUrl, { headers: { cookie }, redirect: "manual" });
+const questionHtml = await question.text();
+const action = questionHtml.match(/<form method="post" action="([^"]+)"/)?.[1];
+let issued = { status: question.status, json: null };
+if (question.status === 200 && action) {
+  const form = new URLSearchParams();
+  for (const m of questionHtml.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)) {
+    form.set(m[1], m[2].replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  }
+  form.set("decision", "approve");
+  const decided = await fetch(new URL(action, SANDBOX), {
+    method: "POST", headers: { cookie, "content-type": "application/x-www-form-urlencoded" }, body: form, redirect: "manual",
+  });
+  const code = new URL(decided.headers.get("location") || "http://x/").searchParams.get("code");
+  if (decided.status === 303 && code) {
+    issued = await call("POST", `${SANDBOX}/token`, { body: {
+      grant_type: "authorization_code", code, redirect_uri: REDIRECT, code_verifier: verifier,
+      resource: RESOURCE, client_id: clientId, client_secret: clientSecret } });
+  } else {
+    issued = { status: decided.status, json: { detail: "the yes was not accepted" } };
+  }
+}
+if (!report(`token for ${SCOPE} (code flow)`, issued, 200, "expires_in " + (issued.json?.expires_in ?? ""))) process.exit(1);
 const token = issued.json.access_token;
+// the grant the yes made: read its id from introspection, to revoke it below
+const info = await call("POST", `${SANDBOX}/v1/token/introspect`, { basic: `${clientId}:${clientSecret}`, body: { token } });
+report("introspect the token", info, 200, `consent_id ${info.json?.consent_id ?? "(none)"}`);
+const codeFlowConsentId = info.json?.consent_id ?? consentId;
 
 // 5. read over REST
 const readUrl = `${SOURCE}/v1/source/${SCOPE}?owner=${encodeURIComponent(did)}`;
@@ -168,7 +208,7 @@ if (ledger.status === 200 && accesses.length === 0) { failed = true; console.log
 if (accesses.length) console.log(`     latest: ${accesses.at(-1).description}`);
 
 // 9. revoke
-const revoked = await call("POST", `${SANDBOX}/v1/consent/revoke`, { bearer: session, body: { consent_id: consentId } });
+const revoked = await call("POST", `${SANDBOX}/v1/consent/revoke`, { bearer: session, body: { consent_id: codeFlowConsentId } });
 report("revoke the grant", revoked, 200);
 
 // 10. the same token, refused on both faces
