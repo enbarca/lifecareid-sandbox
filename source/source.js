@@ -3,8 +3,8 @@
 //
 // It behaves as a conforming resource host (https://developers.lifecare.id/data-sources)
 // against the SANDBOX authorization server, and it serves five synthetic
-// personas (personas.generated.js, generated upstream from the challenge readiness
-// simulation's extract in data/simulator-extract.json). Interpreted outputs only: scores, bands,
+// personas (personas.generated.js, generated upstream from the challenge
+// readiness simulation). Interpreted outputs only: scores, bands,
 // directions, dates and authored sentences. There is no raw reading in the data
 // this module can reach, so none can leak.
 //
@@ -26,7 +26,7 @@
 import PERSONAS from "./personas.generated.js";
 
 export const PREFIX = "/sandbox-source";
-export const VERSION = "0.3.0";
+export const VERSION = "0.3.2";
 export const ACCESSOR = "sandbox-source:synthetic-personas";
 export const NOTICE =
   "Synthetic persona data from the LifeCare.ID® sandbox reference source. " +
@@ -55,16 +55,32 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 const MAX_TOKEN_LENGTH = 512;
 const PERSONA_PIN = /(?:^|[\s\[(;,])persona:(p[0-9]+-[a-z0-9-]+)/;
 
-// The one scope the bare 401 challenge asks for: the broadest everyday scope,
-// and the one the explainer and the live walk of 2026-11-03 used.
+// The default scope every 401 challenge suggests when the request names none:
+// the broadest everyday scope, and the one the explainer and the live walk of
+// 2026-11-03 used. A request for a scope-bound read suggests that scope instead
+// (see challengeScope).
 // profile draft 1 may change this
 const CHALLENGE_SCOPE = "daily";
 
+// CORS for browser clients on another origin. The origin stays `*`: the source
+// is public and the token is a bearer in the Authorization header, so there is
+// no credentials mode and no cookie.
+//
+// `access-control-expose-headers` is what lets that script read the challenge.
+// The Fetch standard lets a cross-origin script read only the CORS-safelisted
+// response headers (Cache-Control, Content-Language, Content-Length,
+// Content-Type, Expires, Last-Modified, Pragma) unless the server names more
+// here, and WWW-Authenticate is not among them. Without it a browser client
+// gets the 401 or the 403 but cannot read `resource_metadata`, `scope` or
+// `error`, so it is never led to the grant and cannot step up. The two MCP
+// headers are exposed so a browser transport can read them too (this source
+// sends no session id today).
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
   "access-control-allow-headers":
     "authorization, content-type, accept, mcp-protocol-version, mcp-session-id",
+  "access-control-expose-headers": "www-authenticate, mcp-session-id, mcp-protocol-version",
   "access-control-max-age": "600",
 };
 
@@ -105,25 +121,26 @@ export class Refusal extends Error {
   // a token was presented and refused: RFC 6750 section 3.1 says a request that
   // carried no credentials gets a bare challenge, without an error code.
   //
-  // The bare challenge on the MCP path also names the scope to ask for (RFC 6750
-  // section 3; MCP authorization, "Protected Resource Metadata Discovery
-  // Requirements": a client takes the challenge's `scope` first). Without it a
-  // stock client asks for every entry of `scopes_supported`, and this issuer
-  // mints single-scope tokens. A refused token gets no scope: the fault is the
-  // token, not what was asked.
+  // Every 401 challenge, on both faces, names the one scope to ask for (RFC 6750
+  // section 3: `scope` may appear on any challenge; MCP authorization, "Protected
+  // Resource Metadata Discovery Requirements": a client takes the challenge's
+  // `scope` first). Without it a stock client that reconnects after expiry or
+  // revocation asks for every entry of `scopes_supported`, and this issuer mints
+  // single-scope tokens. `scope` is the scope the request was for when it names
+  // one (challengeScope), otherwise the default suggestion.
   //
   // A 403 insufficient_scope names the scope the read asked for, and on the MCP
   // path the metadata URL, so the client can start a new authorization (RFC 6750
   // section 3.1; the profile's step-up vector).
-  response({ resourceMetadata } = {}) {
+  response({ resourceMetadata, scope } = {}) {
     let extra = {};
     if (this.status === 401) {
       const params = [];
       if (resourceMetadata) params.push(`resource_metadata="${resourceMetadata}"`);
       if (this.error === "invalid_token") params.push('error="invalid_token"');
       // profile draft 1 may change this
-      if (resourceMetadata && this.error === "missing_token") params.push(`scope="${CHALLENGE_SCOPE}"`);
-      extra = { "www-authenticate": params.length ? "Bearer " + params.join(", ") : "Bearer" };
+      params.push(`scope="${scope || CHALLENGE_SCOPE}"`);
+      extra = { "www-authenticate": "Bearer " + params.join(", ") };
     } else if (this.status === 403 && this.error === "insufficient_scope" && this.scope) {
       const params = ['error="insufficient_scope"', `scope="${this.scope}"`];
       if (resourceMetadata) params.push(`resource_metadata="${resourceMetadata}"`);
@@ -240,8 +257,15 @@ export async function introspect(request, env) {
   // Validation"): a token issued for a named resource must name this one. The
   // identifier is the MCP endpoint for both faces: one resource server, two
   // faces, and the one identifier its metadata publishes as `resource`. A token
-  // without `aud` (a /v1/token token) is accepted as before.
-  if (info.aud !== undefined && info.aud !== null) {
+  // without `aud` (a /v1/token token) is refused up front: the sandbox runs with
+  // caller authentication on, so this source could not record such a read in the
+  // person's ledger (it records only under a token it served, whose audience is
+  // its own resource), and would answer 503 after the fact.
+  if (info.aud === undefined || info.aud === null) {
+    throw new Refusal(401, "invalid_token",
+      "this source requires a token with an audience; take your token through the code flow");
+  }
+  {
     const resource = new URL(request.url).origin + MCP_RESOURCE_PATH;
     const audiences = Array.isArray(info.aud) ? info.aud : [info.aud];
     if (!audiences.includes(resource)) {
@@ -666,6 +690,39 @@ async function mcp(request, env) {
   return answer ? json(200, answer) : new Response(null, { status: 202, headers: CORS });
 }
 
+// The one scope a 401 challenge suggests for this request: the scope the request
+// was for when it names a scope-bound read (REST GET /v1/source/{scope}, or a
+// single MCP tools/call on read_scope or get_weekly_summary), otherwise the
+// default suggestion. The body is read directly (the request is never reused once
+// a 401 is decided) and only when content-length is present and at most
+// MAX_CHALLENGE_BODY bytes; a larger or unsized body, a batch, a body that does
+// not parse, or an unknown scope falls back to the default.
+const MAX_CHALLENGE_BODY = 64 * 1024;
+
+async function challengeScope(request, path) {
+  const read = /^\/v1\/source\/([^/]+)$/.exec(path);
+  if (read) {
+    let scope = read[1];
+    try { scope = decodeURIComponent(scope); } catch (_) { return CHALLENGE_SCOPE; }
+    return Object.hasOwn(SCOPES, scope) ? scope : CHALLENGE_SCOPE;
+  }
+  if (path === "/v1/weekly-summary") return WEEKLY_SUMMARY_SCOPE;
+  if (path !== "/mcp") return CHALLENGE_SCOPE;
+  try {
+    const length = Number(request.headers.get("content-length"));
+    if (!Number.isFinite(length) || length <= 0 || length > MAX_CHALLENGE_BODY) return CHALLENGE_SCOPE;
+    const message = await request.json();
+    if (!message || Array.isArray(message) || message.method !== "tools/call") return CHALLENGE_SCOPE;
+    const name = message.params && message.params.name;
+    if (name === "get_weekly_summary") return WEEKLY_SUMMARY_SCOPE;
+    if (name === "read_scope") {
+      const scope = message.params.arguments && message.params.arguments.scope;
+      if (typeof scope === "string" && Object.hasOwn(SCOPES, scope)) return scope;
+    }
+  } catch (_) { /* no usable body: the default */ }
+  return CHALLENGE_SCOPE;
+}
+
 // --------------------------------------------------------------------------
 // entry point
 // --------------------------------------------------------------------------
@@ -692,7 +749,8 @@ export async function handleRequest(request, env) {
   } catch (e) {
     if (e instanceof Refusal) {
       // Only the MCP path is the resource the metadata document describes.
-      return e.response(path === "/mcp" ? { resourceMetadata: resourceMetadataUrl(url.origin) } : {});
+      const scope = e.status === 401 ? await challengeScope(request, path) : undefined;
+      return e.response({ ...(path === "/mcp" ? { resourceMetadata: resourceMetadataUrl(url.origin) } : {}), scope });
     }
     return json(500, { detail: "internal error", error: "internal_error" });
   }
@@ -713,7 +771,7 @@ export function resourceMetadataUrl(origin) {
   return origin + WELL_KNOWN_PRM + MCP_RESOURCE_PATH;
 }
 
-// Mounted by functions/.well-known/oauth-protected-resource/[[path]].js.
+// Mounted by the Pages Function under /.well-known/oauth-protected-resource/.
 //
 // Only the path form answers 200. The root form
 // (/.well-known/oauth-protected-resource) is a 404: by RFC 9728 section 3 it

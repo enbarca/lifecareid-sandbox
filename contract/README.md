@@ -6,11 +6,10 @@ The API of a LifeCare.ID® instance, as the hosted sandbox and production serve
 it. It is a copy for convenience; the file at
 `https://developers.lifecare.id/openapi.json` is the authority.
 
-Copy in this folder: **version 0.26.0**, 48 paths, taken from the upstream contract at commit `d695a3c2ab99` of 2026-11-04.
+Copy in this folder: **version 0.27.2**, 48 paths, taken from the upstream contract at commit `2d8e110cec64` of 2026-11-05.
 
-The hosted contract is 0.27.0, and its published file differs from this copy by
-the version number only (the sandbox-only routes are not in it); the next sync
-brings the line above up to date.
+The hosted contract is 0.27.2, the same as this copy (the sandbox-only routes
+are not in the published file).
 
 The copy is refreshed when the kit is. A maintainer with the lifecareid checkout
 runs `scripts/sync-upstream.mjs`, which copies the contract at the commit it

@@ -32,9 +32,11 @@ before(async () => {
 after(() => new Promise((resolve) => server.close(resolve)));
 afterEach(() => { globalThis.fetch = realFetch; });
 
-// The mocked sandbox answers the two upstream calls; everything else (the test's
-// own calls to the local server) goes to the real fetch.
-function sandbox({ introspection = () => ACTIVE } = {}) {
+// The mocked sandbox answers the two upstream calls (the default token names
+// this server's MCP resource as its audience, as the source requires);
+// everything else (the test's own calls to the local server) goes to the real
+// fetch.
+function sandbox({ introspection = () => ({ ...ACTIVE, aud: base + "/mcp" }) } = {}) {
   const calls = [];
   globalThis.fetch = async (url, init) => {
     const target = String(url);
@@ -90,6 +92,18 @@ test("a POST body reaches the MCP face intact", async () => {
   const { result } = await res.json();
   assert.equal(result.isError, false);
   assert.equal(result.structuredContent.resource_owner, OWNER);
+});
+
+test("a token with no audience, or another resource's, is refused with a one-scope challenge", async () => {
+  const { aud, ...noAud } = ACTIVE;
+  for (const token of [noAud, { ...ACTIVE, aud: "https://other.example/mcp" }]) {
+    sandbox({ introspection: () => token });
+    const res = await realFetch(`${base}/v1/source/recovery?owner=${encodeURIComponent(OWNER)}`,
+      { headers: { authorization: "Bearer " + TOKEN } });
+    assert.equal(res.status, 401);
+    assert.equal((await res.json()).error, "invalid_token");
+    assert.match(res.headers.get("www-authenticate"), /error="invalid_token".*scope="[a-z_]+"/);
+  }
 });
 
 test("refusals keep their status and headers", async () => {
