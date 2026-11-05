@@ -74,8 +74,9 @@ DEVACCESS=...
 #    person grants access to)
 curl -s -X POST "$SANDBOX/v1/sandbox/clients" -H "Authorization: Bearer $DEVACCESS" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Pilot agent","redirect_uris":["http://localhost:4000/callback"]}'
+  -d '{"name":"Pilot agent","redirect_uris":["http://localhost:4000/callback"],"resources":["http://localhost:8799/sandbox-source/mcp"]}'
 CLIENT_ID=sbx_...        # client_id from the response
+CLIENT_SECRET=...        # client_secret from the response
 
 # 2. mint a synthetic identity
 curl -s -X POST "$SANDBOX/v1/sandbox/test-identity" -H "Authorization: Bearer $DEVACCESS" \
@@ -90,11 +91,24 @@ curl -s -X POST "$SANDBOX/v1/consent/grant" -H "Authorization: Bearer $SESSION" 
   "scopes":["recovery","daily"],"purpose":{"text":"agent governance pilot"},"duration_days":1}'
 CONSENT_ID=urn:lifecare:consent:...
 
-# 4. a token for one scope
-curl -s -X POST "$SANDBOX/v1/token" -H "Authorization: Bearer $SESSION" \
-  -H "Content-Type: application/json" -d '{
-  "subject_did":"'"$DID"'","scope":"recovery","purpose":"agent governance pilot","requester":"'"$CLIENT_ID"'"}'
+# 4. a token for one scope, from the authorization code flow, as an app gets it in
+#    production (POST /v1/token with a session is issued only against the person's
+#    own grant). The client needs your source's address as a resource, and the
+#    person's yes is given with the synthetic session cookie.
+RESOURCE=http://localhost:8799/sandbox-source/mcp   # register it: "resources":["..."] in step 1's body
+REDIRECT=http://localhost:4000/callback
+COOKIE="__Host-lc_id_session=$SESSION"
+VERIFIER=$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=\n')
+CHALLENGE=$(printf %s "$VERIFIER" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+PAGE=$(curl -s -b "$COOKIE" "$SANDBOX/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=$REDIRECT&state=s1&code_challenge=$CHALLENGE&code_challenge_method=S256&scope=recovery&resource=$RESOURCE")
+ARGS=(); while read -r k v; do ARGS+=(--data-urlencode "$k=$v"); done < <(printf %s "$PAGE" | grep -o '<input type="hidden" name="[a-z_]*" value="[^"]*">' | sed 's/.*name="\([a-z_]*\)" value="\([^"]*\)">/\1 \2/')
+CODE=$(curl -s -o /dev/null -D - -b "$COOKIE" "${ARGS[@]}" -d decision=approve "$SANDBOX/data-consent/decide" | sed -n 's/^[Ll]ocation: .*[?&]code=\([^&[:space:]]*\).*/\1/p')
+curl -s -X POST "$SANDBOX/token" -d grant_type=authorization_code -d "code=$CODE" \
+  -d "redirect_uri=$REDIRECT" -d "code_verifier=$VERIFIER" -d "resource=$RESOURCE" \
+  -d "client_id=$CLIENT_ID" -d "client_secret=$CLIENT_SECRET"
 TOKEN=lc_...
+# the grant the yes made has its own consent_id: introspect the token to read it
+# (POST $SANDBOX/v1/token/introspect, -u "$CLIENT_ID:$CLIENT_SECRET") and use it in step 8
 
 # 5. read over REST, at your source (introspected at the sandbox, recorded in
 #    the ledger, then served)
