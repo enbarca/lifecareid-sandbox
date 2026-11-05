@@ -6,7 +6,8 @@ Server half. Every `401` challenge now carries `scope`, the one scope the server
 suggests: the scope the request was for when the server passes it (`scope` or the
 new `suggest` option of `authenticate`, which an MCP server uses to name the scope
 of a `tools/call` before it has authenticated), otherwise the server's default
-`scope`. Before, a `401` for a presented token (expired, revoked, for another
+`scope`. This supersedes the 0.1.0 line below that says the scope is suggested
+only while no token was presented. Before, a `401` for a presented token (expired, revoked, for another
 resource) carried `error="invalid_token"` and no scope, so a stock client that
 reconnected asked for every scope in the metadata and the issuer refused. `error`
 and the body are unchanged. The synthetic MCP example passes `suggest`.

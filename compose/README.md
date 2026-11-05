@@ -203,7 +203,7 @@ scope named; inside a JSON-RPC batch the same refusal stays a tool error, and
 nothing is written to the ledger either way. This is in the copy of the source
 here (version 0.3.0).
 
-One thing the hosted source (0.3.1) does that this copy does not yet: it exposes
+One thing the hosted source (0.3.2 after its deploy) does that this copy does not yet: it names one scope on every `401` and exposes
 `www-authenticate`, `mcp-session-id` and `mcp-protocol-version` to pages on other
 origins (`Access-Control-Expose-Headers`). Until the next sync, a browser page
 that calls your local source sees `null` for `WWW-Authenticate`; a client
