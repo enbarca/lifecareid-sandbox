@@ -1,6 +1,6 @@
 # Instructions for a coding agent working in this repository
 
-Written 2026-11-04, against the hosted sandbox at 0.27.0 and the source at 0.3.1.
+Written 2026-11-04, against the hosted sandbox at 0.27.2 and the source at 0.3.2.
 For anything this file does not say, read the README of the folder you are in,
 then `https://developers.lifecare.id/llms.txt` and
 `https://developers.lifecare.id/openapi.json` (the authority for the API).
@@ -129,11 +129,10 @@ library, the examples, or an agent or server built on it.
   (`lib/person-managed-auth/src/client.js`, `server.js`, `node.js`, `pages.js`);
   the README's `@lifecareid/person-managed-auth/...` imports are for after
   publication.
-- `source/` is at 0.3.0; the hosted source is 0.3.1, which adds one CORS header
-  that exposes `WWW-Authenticate` to a page on another origin. The source on
-  your machine lacks it until the next sync.
-- `contract/openapi.json` is 0.26.0; the hosted contract is 0.27.0 and differs
-  from the copy by the version number only.
+- `source/` is at 0.3.2, the same as the hosted source: one scope named on
+  every `401`, `WWW-Authenticate` exposed to a page on another origin, and a
+  token with no audience refused.
+- `contract/openapi.json` is 0.27.2, the version at the commit synced.
 - The sandbox's own metadata and token endpoints do not answer a browser on
   another origin yet, so a browser-only agent cannot finish the flow.
 - Clients registered before the 0.27.0 deploy on 2026-11-04 carry no owner and

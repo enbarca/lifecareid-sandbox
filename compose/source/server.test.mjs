@@ -32,9 +32,10 @@ before(async () => {
 after(() => new Promise((resolve) => server.close(resolve)));
 afterEach(() => { globalThis.fetch = realFetch; });
 
-// The mocked sandbox answers the two upstream calls; everything else (the test's
+// The mocked sandbox answers the two upstream calls (the default token names
+// this server's MCP resource as its audience, as the source requires); everything else (the test's
 // own calls to the local server) goes to the real fetch.
-function sandbox({ introspection = () => ACTIVE } = {}) {
+function sandbox({ introspection = () => ({ ...ACTIVE, aud: base + "/mcp" }) } = {}) {
   const calls = [];
   globalThis.fetch = async (url, init) => {
     const target = String(url);

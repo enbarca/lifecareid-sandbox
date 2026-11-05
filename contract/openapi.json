@@ -1611,7 +1611,7 @@
   "info": {
     "description": "Patient-held consent and authorization layer. Mediates identity, consent, tokens, and revocation; never stores or relays health data. Contract: docs/contracts/ in this repo.",
     "title": "lifecare.id API",
-    "version": "0.26.0"
+    "version": "0.27.2"
   },
   "openapi": "3.1.0",
   "paths": {

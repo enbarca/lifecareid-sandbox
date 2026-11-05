@@ -122,7 +122,7 @@ test("MCP, a refused token: the challenge adds error=invalid_token", async () =>
   const res = await mcpCall("lc_revoked");
   assert.equal(res.status, 401);
   assert.equal(res.headers.get("www-authenticate"),
-    `Bearer resource_metadata="${METADATA_URL}", error="invalid_token"`);
+    `Bearer resource_metadata="${METADATA_URL}", error="invalid_token", scope="daily"`);
   assert.equal((await res.json()).error, "invalid_token");
 });
 
@@ -130,7 +130,7 @@ test("MCP, an oversized token is refused before the sandbox is asked, with the s
   globalThis.fetch = async () => { throw new Error("the sandbox must not be asked"); };
   const res = await mcpCall("x".repeat(600));
   assert.equal(res.status, 401);
-  assert.match(res.headers.get("www-authenticate"), /resource_metadata=".*", error="invalid_token"$/);
+  assert.match(res.headers.get("www-authenticate"), /resource_metadata=".*", error="invalid_token", scope="daily"$/);
 });
 
 test("the challenge's URL is the one the document answers at (round trip)", async () => {
@@ -159,12 +159,12 @@ test("a trailing slash on the MCP path is a 308 to the canonical path, so the ch
   assert.equal(res.headers.get("location"), ORIGIN + "/sandbox-source/mcp?x=1");
 });
 
-test("REST 401s keep a plain challenge: the document describes the MCP resource only", async () => {
+test("REST 401s carry no resource_metadata (the document describes the MCP resource only) but name the scope", async () => {
   const res = await sourceRequest({
     request: new Request(ORIGIN + "/sandbox-source/v1/scopes"), env: ENV,
   });
   assert.equal(res.status, 401);
-  assert.equal(res.headers.get("www-authenticate"), "Bearer");
+  assert.equal(res.headers.get("www-authenticate"), 'Bearer scope="daily"');
 });
 
 test("a 403 and a 503 on the MCP path carry no challenge", async () => {
@@ -190,11 +190,11 @@ test("the descriptor names the metadata URL beside the MCP endpoint", async () =
 
 // ------------------------------------------------------------ the scope to ask for
 
-test("MCP, a refused token: the challenge carries error and no scope", async () => {
+test("MCP, a refused token: the challenge carries error and the one scope", async () => {
   inactiveSandbox();
   const header = (await mcpCall("lc_revoked")).headers.get("www-authenticate");
   assert.match(header, /error="invalid_token"/);
-  assert.doesNotMatch(header, /scope=/);
+  assert.match(header, /scope="daily"/);
 });
 
 test("the challenge's scope is one the metadata lists, so a client's request is one the issuer can answer", async () => {
@@ -206,9 +206,9 @@ test("the challenge's scope is one the metadata lists, so a client's request is 
   assert.ok(!scope.includes(" "), "one scope, not a list");
 });
 
-test("REST, no token: the plain challenge, with no scope and no metadata", async () => {
+test("REST, no token: the challenge names the scope and has no metadata", async () => {
   const res = await sourceRequest({ request: new Request(ORIGIN + "/sandbox-source/v1/scopes"), env: ENV });
-  assert.equal(res.headers.get("www-authenticate"), "Bearer");
+  assert.equal(res.headers.get("www-authenticate"), 'Bearer scope="daily"');
 });
 
 // ------------------------------------------------------------ step-up (403)
@@ -218,6 +218,7 @@ const ACTIVE = {
   active: true, token_type: "access", resource_owner: OWNER, scope: "recovery",
   purpose: "agent governance pilot", requester: "sbx_client",
   consent_id: "urn:lifecare:consent:abc", expires_at: "2999-01-01T00:00:00+00:00",
+  aud: "https://lifecare.id/sandbox-source/mcp",
 };
 
 // Stands in for the sandbox and counts what is written to the ledger.
@@ -317,13 +318,15 @@ test("other 403s (wrong_token_type, wrong_subject) keep no challenge", async () 
 
 const RESOURCE = ORIGIN + "/sandbox-source/mcp";
 
+const MCP_READ_BODY = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+  params: { name: "read_scope", arguments: { scope: "recovery", owner: OWNER } } });
+
 function mcpRead(token = "lc_good") {
   return sourceRequest({
     request: new Request(RESOURCE, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer " + token },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
-        params: { name: "read_scope", arguments: { scope: "recovery", owner: OWNER } } }),
+      headers: { "content-type": "application/json", authorization: "Bearer " + token, "content-length": String(MCP_READ_BODY.length) },
+      body: MCP_READ_BODY,
     }),
     env: ENV,
   });
@@ -344,18 +347,21 @@ test("aud as a list that names the resource is accepted", async () => {
   assert.equal((await restRead("recovery")).status, 200);
 });
 
-test("no aud (a /v1/token token) is accepted exactly as before", async () => {
-  const calls = sandbox(ACTIVE);
-  assert.equal((await restRead("recovery")).status, 200);
-  assert.equal((await mcpRead()).status, 200);
-  assert.equal(calls.record, 2);
+test("no aud (a /v1/token token) is refused up front, on REST and MCP, and nothing is written", async () => {
+  const { aud, ...noAud } = ACTIVE;
+  const calls = sandbox(noAud);
+  const rest = await restRead("recovery");
+  assert.equal(rest.status, 401);
+  assert.match(JSON.stringify(await rest.json()), /requires a token with an audience; take your token through the code flow/);
+  assert.equal((await mcpRead()).status, 401);
+  assert.equal(calls.record, 0);
 });
 
 test("aud for another resource: 401 invalid_token with the challenge, on REST, and nothing is written", async () => {
   const calls = sandbox({ ...ACTIVE, aud: "https://other.example/sandbox-source/mcp" });
   const res = await restRead("recovery");
   assert.equal(res.status, 401);
-  assert.equal(res.headers.get("www-authenticate"), 'Bearer error="invalid_token"');
+  assert.equal(res.headers.get("www-authenticate"), 'Bearer error="invalid_token", scope="recovery"');
   assert.deepEqual(await res.json(), {
     detail: "the token was issued for another resource", error: "invalid_token",
   });
@@ -367,8 +373,7 @@ test("aud for another resource: 401 invalid_token with the challenge, on MCP, an
   const res = await mcpRead();
   assert.equal(res.status, 401);
   assert.equal(res.headers.get("www-authenticate"),
-    `Bearer resource_metadata="${METADATA_URL}", error="invalid_token"`);
-  assert.doesNotMatch(res.headers.get("www-authenticate"), /scope=/);
+    `Bearer resource_metadata="${METADATA_URL}", error="invalid_token", scope="recovery"`);
   assert.deepEqual(await res.json(), {
     detail: "the token was issued for another resource", error: "invalid_token",
   });
@@ -401,8 +406,96 @@ test("a malformed aud (empty, not a string) is a mismatch, not a pass", async ()
   }
 });
 
-test("the version is 0.3.0 and the descriptor shows it", async () => {
-  assert.equal(VERSION, "0.3.0");
+test("the version is 0.3.2 and the descriptor shows it", async () => {
+  assert.equal(VERSION, "0.3.2");
   const body = await (await sourceRequest({ request: new Request(ORIGIN + "/sandbox-source/"), env: ENV })).json();
-  assert.equal(body.version, "0.3.0");
+  assert.equal(body.version, "0.3.2");
+});
+
+// ------------------------------------------------------------ CORS: a browser client reads the challenge
+
+// The Fetch standard lets a cross-origin script read only the CORS-safelisted
+// response headers, and WWW-Authenticate is not one of them, so the source names
+// it (and the two MCP headers) in access-control-expose-headers.
+const EXPOSED = "www-authenticate, mcp-session-id, mcp-protocol-version";
+const exposed = (res) => res.headers.get("access-control-expose-headers");
+
+function activeToken(extra = {}) {
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    active: true, token_type: "access", resource_owner: "did:web:sandbox.example:u:817612d13f3219b6",
+    scope: "recovery", expires_at: "2999-01-01T00:00:00+00:00",
+    aud: "https://lifecare.id/sandbox-source/mcp", ...extra,
+  }), { status: 200 });
+}
+
+test("CORS: the bare 401 on the MCP path exposes WWW-Authenticate", async () => {
+  const res = await mcpCall(null);
+  assert.equal(res.status, 401);
+  assert.equal(exposed(res), EXPOSED);
+  assert.equal(res.headers.get("access-control-allow-origin"), "*");
+});
+
+test("CORS: the presented-token 401 exposes WWW-Authenticate", async () => {
+  inactiveSandbox();
+  const res = await mcpCall("lc_revoked");
+  assert.equal(res.status, 401);
+  assert.equal(exposed(res), EXPOSED);
+});
+
+test("CORS: the single-call 403 insufficient_scope exposes WWW-Authenticate", async () => {
+  activeToken();
+  const res = await sourceRequest({
+    request: new Request(ORIGIN + "/sandbox-source/mcp", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer lc_recovery_only" },
+      body: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "read_scope", arguments: { scope: "cgm", owner: "did:web:sandbox.example:u:817612d13f3219b6" } },
+      }),
+    }),
+    env: ENV,
+  });
+  assert.equal(res.status, 403);
+  assert.match(res.headers.get("www-authenticate"), /error="insufficient_scope"/);
+  assert.equal(exposed(res), EXPOSED);
+});
+
+test("CORS: the REST 403 exposes WWW-Authenticate", async () => {
+  activeToken();
+  const res = await sourceRequest({
+    request: new Request(
+      ORIGIN + "/sandbox-source/v1/source/cgm?owner=did%3Aweb%3Asandbox.example%3Au%3A817612d13f3219b6",
+      { headers: { authorization: "Bearer lc_recovery_only" } }),
+    env: ENV,
+  });
+  assert.equal(res.status, 403);
+  assert.equal((await res.json()).error, "insufficient_scope");
+  assert.equal(exposed(res), EXPOSED);
+});
+
+test("CORS: the metadata GET exposes WWW-Authenticate too", async () => {
+  const res = await wellKnown("/.well-known/oauth-protected-resource/sandbox-source/mcp");
+  assert.equal(res.status, 200);
+  assert.equal(exposed(res), EXPOSED);
+});
+
+test("CORS: the preflight answers expose it, on the source and on the metadata", async () => {
+  const preflight = await sourceRequest({
+    request: new Request(ORIGIN + "/sandbox-source/mcp", { method: "OPTIONS" }), env: ENV,
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(exposed(preflight), EXPOSED);
+  const metadata = await wellKnown("/.well-known/oauth-protected-resource/sandbox-source/mcp", { method: "OPTIONS" });
+  assert.equal(metadata.status, 204);
+  assert.equal(exposed(metadata), EXPOSED);
+});
+
+test("CORS: the 308 to the canonical MCP path exposes it, and the origin stays *", async () => {
+  const res = await sourceRequest({
+    request: new Request(ORIGIN + "/sandbox-source/mcp/", { method: "POST", body: "{}" }), env: ENV,
+  });
+  assert.equal(res.status, 308);
+  assert.equal(exposed(res), EXPOSED);
+  assert.equal(res.headers.get("access-control-allow-origin"), "*");
+  assert.equal(res.headers.get("access-control-allow-credentials"), null);
 });

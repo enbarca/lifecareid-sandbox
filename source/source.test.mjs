@@ -38,6 +38,8 @@ const ACTIVE = {
   requester: "sbx_client",
   consent_id: "urn:lifecare:consent:abc",
   expires_at: "2999-01-01T00:00:00+00:00",
+  // a token from the code flow names its resource; one without is refused
+  aud: "https://site.example/sandbox-source/mcp",
 };
 
 const realFetch = globalThis.fetch;

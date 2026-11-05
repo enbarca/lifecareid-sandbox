@@ -4,7 +4,7 @@
 // that follows the MCP authorization specification is led from the endpoint to
 // the sandbox authorization server
 // (https://developers.lifecare.id/sandbox-data-source, "Discovery"). All
-// behaviour lives in source/source.js.
+// behaviour lives in the source module.
 //
 // A function, not a static file, because the document
 // carries the sandbox origin from the Pages project variable

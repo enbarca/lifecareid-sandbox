@@ -104,19 +104,15 @@ LIFECAREID_DEVACCESS_TOKEN=... SOURCE=http://localhost:8799/sandbox-source node 
 walkthrough by hand, the authorization code flow against your source and how
 the container is wired.
 
-Status of the copies. The `source/` copy in this kit is version 0.3.0, synced
-from the LifeCare.ID® repository on 2026-11-04 (`sync/UPSTREAM`). The hosted
-source is 0.3.2 once its deploy lands (0.3.1 until then). It adds one response
-header,
-`Access-Control-Expose-Headers: www-authenticate, mcp-session-id, mcp-protocol-version`,
-so that a page on another origin can read the challenge, and it names one scope
-on every `401`, a refused token included. The source on your machine does
-neither until the kit's copy catches up at the next sync, so a browser page
-reading its `401` sees `null` for `WWW-Authenticate`, and a refused token's
-challenge there carries no scope; a client outside a browser is unaffected by
-the header, and everything else described here is the same on both. The
-`contract/` copy is 0.26.0 against the hosted 0.27.0, whose published file
-differs from it by the version number only.
+Status of the copies. The `source/` copy in this kit is version 0.3.2, synced
+from the LifeCare.ID® repository (`sync/UPSTREAM` records the commit), and the
+hosted source is 0.3.2 too. It exposes `www-authenticate`, `mcp-session-id` and
+`mcp-protocol-version` to pages on other origins
+(`Access-Control-Expose-Headers`), names one scope on every `401`, a refused
+token included, and refuses a token with no audience. The issuer honours the
+resources a developer registered on their own client as well as the operator's
+allow-list (the own-resource registry, contract 0.27.0 and later). The
+`contract/` copy is 0.27.2, the version at the commit synced.
 
 ## Try to break it
 
@@ -139,7 +135,8 @@ things worth trying first:
   one for your local source ([compose/README.md](compose/README.md) shows how)
   and present it to the hosted source: `401 invalid_token`, "the token was
   issued for another resource", and nothing is written to the ledger. A token
-  from the walkthrough's API path carries no `aud` and is accepted.
+  with no `aud` at all is refused too: `401 invalid_token`, "this source
+  requires a token with an audience", and the challenge names one scope.
 
 Found a hole, in the source or in what the sandbox lets it do? Open an issue
 here with the request shape and the response. Leave the token out. A finding

@@ -141,8 +141,10 @@ yes given headless. An agent that follows the MCP authorization specification ta
 the same flow from the `401`, and its
 token is bound to the resource it asked for, so your source's address has to be
 a resource of the client. Register it on the agent's client with `resources`
-(live on the hosted sandbox since 2026-11-04, contract 0.27.0), with the
-redirect URI the agent will use:
+(the issuer's own-resource registry, contract 0.27.0 and later), with the
+redirect URI the agent will use. The issuer honours the resources a developer
+registered on their own client as well as the operator's allow-list, so your
+address is accepted without anyone adding it to a list:
 
 ```bash
 curl -s -X POST https://sandbox.lifecare.id/v1/sandbox/clients \
@@ -201,13 +203,12 @@ body and `WWW-Authenticate: Bearer error="insufficient_scope", scope="<the scope
 so a client that follows the MCP authorization specification can step up to the
 scope named; inside a JSON-RPC batch the same refusal stays a tool error, and
 nothing is written to the ledger either way. This is in the copy of the source
-here (version 0.3.0).
-
-One thing the hosted source (0.3.2 after its deploy) does that this copy does not yet: it names one scope on every `401` and exposes
-`www-authenticate`, `mcp-session-id` and `mcp-protocol-version` to pages on other
-origins (`Access-Control-Expose-Headers`). Until the next sync, a browser page
-that calls your local source sees `null` for `WWW-Authenticate`; a client
-outside a browser reads it as described.
+here (version 0.3.2), as are the rest of what the hosted source does: it names
+one scope on every `401`, exposes `www-authenticate`, `mcp-session-id` and
+`mcp-protocol-version` to pages on other origins
+(`Access-Control-Expose-Headers`), and refuses a token with no audience
+(`401 invalid_token`), so a token must come from the authorization code flow
+with your source's address as a resource.
 
 ## How it is wired
 
