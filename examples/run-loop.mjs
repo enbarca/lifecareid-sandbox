@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The whole loop against a LifeCare.ID® sandbox, in one run: read the source's
 // challenge and follow it to the sandbox (OAuth protected resource metadata,
-// RFC 9728), register a client, mint a synthetic person, grant two scopes, get a token for one
+// RFC 9728), register a client, mint a synthetic person, grant one scope, get a token for it
 // through the authorization code flow (PKCE, the person's yes, POST /token), read over
 // REST and over MCP, provoke the refusal for a scope that was not granted, see
 // the read in the person's ledger, revoke, and watch the next read fail on both
