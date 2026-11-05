@@ -1,5 +1,16 @@
 # Changelog
 
+## Every 401 names the one scope (2026-11-05)
+
+Server half. Every `401` challenge now carries `scope`, the one scope the server
+suggests: the scope the request was for when the server passes it (`scope` or the
+new `suggest` option of `authenticate`, which an MCP server uses to name the scope
+of a `tools/call` before it has authenticated), otherwise the server's default
+`scope`. Before, a `401` for a presented token (expired, revoked, for another
+resource) carried `error="invalid_token"` and no scope, so a stock client that
+reconnected asked for every scope in the metadata and the issuer refused. `error`
+and the body are unchanged. The synthetic MCP example passes `suggest`.
+
 ## Examples, after hosted sandbox 0.27.0 (2026-11-04)
 
 No change to the library. The server example now lists first, registers its
