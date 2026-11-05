@@ -106,12 +106,15 @@ the container is wired.
 
 Status of the copies. The `source/` copy in this kit is version 0.3.0, synced
 from the LifeCare.ID® repository on 2026-11-04 (`sync/UPSTREAM`). The hosted
-source is 0.3.1, which adds one response header,
+source is 0.3.2 once its deploy lands (0.3.1 until then). It adds one response
+header,
 `Access-Control-Expose-Headers: www-authenticate, mcp-session-id, mcp-protocol-version`,
-so that a page on another origin can read the challenge. The source on your
-machine does not send it until the next sync, so a browser page reading its
-`401` sees `null` for `WWW-Authenticate`; a client outside a browser is
-unaffected, and everything else described here is the same on both. The
+so that a page on another origin can read the challenge, and it names one scope
+on every `401`, a refused token included. The source on your machine does
+neither until the kit's copy catches up at the next sync, so a browser page
+reading its `401` sees `null` for `WWW-Authenticate`, and a refused token's
+challenge there carries no scope; a client outside a browser is unaffected by
+the header, and everything else described here is the same on both. The
 `contract/` copy is 0.26.0 against the hosted 0.27.0, whose published file
 differs from it by the version number only.
 
@@ -166,7 +169,8 @@ tokens (`authorization_servers`), the scopes the source understands and the
 documentation. The same URL comes back in the challenge of a `401`: an MCP
 request with no token answers `WWW-Authenticate: Bearer resource_metadata="...", scope="daily"`,
 naming the one scope to ask for, and a request with a token the sandbox refuses
-adds `error="invalid_token"` and no scope. A client that follows the MCP
+adds `error="invalid_token"` and the same scope; the scope is the one a single
+`read_scope` call names, otherwise `daily`. A client that follows the MCP
 authorization specification is therefore led from the endpoint to the sandbox
 without being told. The example client follows the
 same path before it asks for anything: it sends one request with no token,

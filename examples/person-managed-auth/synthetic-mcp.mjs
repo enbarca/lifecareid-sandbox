@@ -42,6 +42,18 @@ function toolResult(payload, isError = false) {
   return { content: [{ type: "text", text: JSON.stringify(payload) }], structuredContent: payload, isError };
 }
 
+// The scope a single tools/call is for, read from a clone so the body stays
+// unread, or undefined (a batch, another method, an unparseable body).
+async function callScope(request) {
+  try {
+    const m = await request.clone().json();
+    if (m && !Array.isArray(m) && m.method === "tools/call" && m.params?.name === "read_scope") {
+      return m.params.arguments?.scope;
+    }
+  } catch (_) { /* no usable body: the default */ }
+  return undefined;
+}
+
 export function syntheticMcp(server) {
   async function handleOne(message, grant, { single }) {
     const { id, method, params } = message;
@@ -72,7 +84,9 @@ export function syntheticMcp(server) {
 
   return async function handler(request) {
     if (request.method !== "POST") return json(405, { detail: "this endpoint takes POST", error: "method_not_allowed" }, { allow: "POST" });
-    const grant = await server.authenticate(request); // every message, every time
+    // every message, every time. A 401 names the one scope it suggests: the
+    // scope of a single tools/call when the body names one, otherwise the default.
+    const grant = await server.authenticate(request, { suggest: await callScope(request) });
     let body;
     try { body = await request.json(); } catch (_) { return json(400, rpcError(null, -32700, "parse error")); }
     if (Array.isArray(body)) {

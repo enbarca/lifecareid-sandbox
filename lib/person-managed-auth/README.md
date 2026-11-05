@@ -260,7 +260,7 @@ Active; not past its expiry; `token_type` is `access`; the audience, when
 there is one, is this resource; the owner is a DID; the grantee is accepted.
 Then the scope, if you asked for one. Then, for a read, the ledger line, and only
 then your handler. Refusals are `{ detail, error }` with the status and, where it
-applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token`,
+applies, the `WWW-Authenticate` header: 401 `missing_token` and `invalid_token` (both name the one scope the server suggests, so a client that reconnects after expiry or revocation asks for it and recovers; an MCP server that learns the scope from the call passes it as `suggest` to `authenticate`),
 403 `wrong_token_type`, `wrong_grantee`, `wrong_subject` and `insufficient_scope`,
 503 `introspection_unavailable`, `server_not_authorized` and
 `access_record_failed`.
