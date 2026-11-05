@@ -131,13 +131,14 @@ const minted = await call("POST", `${SANDBOX}/v1/sandbox/test-identity`, { beare
 if (!report("mint a synthetic identity", minted, 200, minted.json?.did ?? "")) process.exit(1);
 const { did, session_token: session } = minted.json;
 
-// 3. the person grants the client two scopes
+// 3. the person grants the client the scope (the code flow below reuses this grant:
+//    one scope, the same purpose)
 const granted = await call("POST", `${SANDBOX}/v1/consent/grant`, {
   bearer: session,
   body: { subject_did: did, grantee: { name: "Sandbox kit loop", id: clientId },
-    scopes: [SCOPE, "daily"], purpose: { text: PURPOSE }, duration_days: 1 },
+    scopes: [SCOPE], purpose: { text: PURPOSE }, duration_days: 1 },
 });
-if (!report("grant recovery and daily", granted, 200, granted.json?.consent_id ?? "")) process.exit(1);
+if (!report("grant recovery", granted, 200, granted.json?.consent_id ?? "")) process.exit(1);
 const consentId = granted.json.consent_id;
 
 // 4. a token for one scope, from the authorization code flow, as an app gets it in
@@ -159,7 +160,7 @@ let issued = { status: question.status, json: null };
 if (question.status === 200 && action) {
   const form = new URLSearchParams();
   for (const m of questionHtml.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"/g)) {
-    form.set(m[1], m[2].replace(/&amp;/g, "&").replace(/&quot;/g, '"'));
+    form.set(m[1], m[2].replace(/&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
   }
   form.set("decision", "approve");
   const decided = await fetch(new URL(action, SANDBOX), {
@@ -178,6 +179,7 @@ if (!report(`token for ${SCOPE} (code flow)`, issued, 200, "expires_in " + (issu
 const token = issued.json.access_token;
 // the grant the yes made: read its id from introspection, to revoke it below
 const info = await call("POST", `${SANDBOX}/v1/token/introspect`, { basic: `${clientId}:${clientSecret}`, body: { token } });
+report("introspect the token", info, 200, `consent_id ${info.json?.consent_id ?? "(none)"}`);
 const codeFlowConsentId = info.json?.consent_id ?? consentId;
 
 // 5. read over REST

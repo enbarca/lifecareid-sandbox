@@ -84,11 +84,11 @@ curl -s -X POST "$SANDBOX/v1/sandbox/test-identity" -H "Authorization: Bearer $D
 DID=did:web:...                   # did from the response
 SESSION=lcs_...                   # session_token from the response
 
-# 3. the synthetic person grants your client two scopes
+# 3. the synthetic person grants your client one scope
 curl -s -X POST "$SANDBOX/v1/consent/grant" -H "Authorization: Bearer $SESSION" \
   -H "Content-Type: application/json" -d '{
   "subject_did":"'"$DID"'","grantee":{"name":"Pilot agent","id":"'"$CLIENT_ID"'"},
-  "scopes":["recovery","daily"],"purpose":{"text":"agent governance pilot"},"duration_days":1}'
+  "scopes":["recovery"],"purpose":{"text":"agent governance pilot"},"duration_days":1}'
 CONSENT_ID=urn:lifecare:consent:...
 
 # 4. a token for one scope, from the authorization code flow, as an app gets it in
@@ -100,15 +100,15 @@ REDIRECT=http://localhost:4000/callback
 COOKIE="__Host-lc_id_session=$SESSION"
 VERIFIER=$(openssl rand -base64 48 | tr '+/' '-_' | tr -d '=\n')
 CHALLENGE=$(printf %s "$VERIFIER" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')
-PAGE=$(curl -s -b "$COOKIE" "$SANDBOX/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=$REDIRECT&state=s1&code_challenge=$CHALLENGE&code_challenge_method=S256&scope=recovery&resource=$RESOURCE")
+PAGE=$(curl -s -b "$COOKIE" "$SANDBOX/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=$REDIRECT&state=s1&code_challenge=$CHALLENGE&code_challenge_method=S256&scope=recovery&purpose=agent%20governance%20pilot&resource=$RESOURCE")
 ARGS=(); while read -r k v; do ARGS+=(--data-urlencode "$k=$v"); done < <(printf %s "$PAGE" | grep -o '<input type="hidden" name="[a-z_]*" value="[^"]*">' | sed 's/.*name="\([a-z_]*\)" value="\([^"]*\)">/\1 \2/')
 CODE=$(curl -s -o /dev/null -D - -b "$COOKIE" "${ARGS[@]}" -d decision=approve "$SANDBOX/data-consent/decide" | sed -n 's/^[Ll]ocation: .*[?&]code=\([^&[:space:]]*\).*/\1/p')
 curl -s -X POST "$SANDBOX/token" -d grant_type=authorization_code -d "code=$CODE" \
   -d "redirect_uri=$REDIRECT" -d "code_verifier=$VERIFIER" -d "resource=$RESOURCE" \
   -d "client_id=$CLIENT_ID" -d "client_secret=$CLIENT_SECRET"
 TOKEN=lc_...
-# the grant the yes made has its own consent_id: introspect the token to read it
-# (POST $SANDBOX/v1/token/introspect, -u "$CLIENT_ID:$CLIENT_SECRET") and use it in step 8
+# the flow reuses the step 3 grant (one scope, the same purpose), so $CONSENT_ID
+# below is the grant this token was issued under
 
 # 5. read over REST, at your source (introspected at the sandbox, recorded in
 #    the ledger, then served)
@@ -136,8 +136,9 @@ records nothing) and another person's DID as `owner` (`403 wrong_subject`).
 
 ## The authorization code flow against your source
 
-The walkthrough above is the sandbox's API path: its token carries no audience.
-An agent that follows the standard takes the authorization code flow, and its
+The walkthrough above takes the authorization code flow by hand, with the person's
+yes given headless. An agent that follows the MCP authorization specification takes
+the same flow from the `401`, and its
 token is bound to the resource it asked for, so your source's address has to be
 a resource of the client. Register it on the agent's client with `resources`
 (live on the hosted sandbox since 2026-11-04, contract 0.27.0), with the
