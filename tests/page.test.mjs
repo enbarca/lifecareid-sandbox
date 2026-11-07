@@ -151,7 +151,7 @@ test("the page backend walks yes, exchange, read, revoke and the refused read", 
 
     // only this page may drive the backend
     assert.equal((await api(base, "POST", "/api/read", {}, { origin: "https://evil.example" })).status, 403);
-    const form = await fetch(base + "/api/revoke", { method: "POST", headers: { "content-type": "text/plain" }, body: "x" });
+    const form = await fetch(base + "/api/revoke", { method: "POST", headers: { "content-type": "text/plain", origin: base }, body: "x" });
     assert.equal(form.status, 415);
 
     // the page and its scripts are served
