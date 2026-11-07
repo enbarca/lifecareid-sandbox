@@ -57,6 +57,12 @@ $("b1").onclick = () => guarded(1, async () => {
     authorization_response_iss_parameter_supported: m.authorization_response_iss_parameter_supported,
   }, null, 2));
   if (prm.res.status !== 200 || meta.res.status !== 200) throw new Error("discovery did not answer 200");
+  const issuerOk = (prm.body.authorization_servers || [])[0] === m.issuer;
+  const resourceOk = prm.body.resource === `${src.origin}${src.pathname}/mcp`;
+  out(1, "", `check: the metadata names this source as the resource: ${resourceOk ? "yes" : "no"}`,
+    `check: its first authorization server is the issuer whose metadata was read: ${issuerOk ? "yes" : "no"}`);
+  if (!resourceOk || !issuerOk) throw new Error("the metadata does not match the source or the issuer");
+  walk.prmUrl = prmUrl;
   walk.resource = prm.body.resource;
   walk.authorizeEndpoint = m.authorization_endpoint || `${issuer}/authorize`;
   state(1, "done");
@@ -76,7 +82,10 @@ $("b2").onclick = () => guarded(2, async () => {
   out(2, `-> ${res.status}`, `WWW-Authenticate: ${challenge}`);
   if (res.status !== 401 || !challenge) throw new Error("expected a 401 with a challenge");
   walk.challenge = Object.fromEntries([...challenge.matchAll(/([a-z_]+)="([^"]*)"/g)].map((m) => [m[1], m[2]]));
-  out(2, "", `the scope to ask for: ${walk.challenge.scope}`, `the metadata: ${walk.challenge.resource_metadata}`);
+  const sameDoc = walk.challenge.resource_metadata === walk.prmUrl;
+  out(2, "", `check: the challenge names the metadata document fetched in step 1: ${sameDoc ? "yes" : "no"}`);
+  if (!sameDoc) throw new Error("the challenge names a different metadata document");
+  out(2, `the scope to ask for: ${walk.challenge.scope}`, `the metadata: ${walk.challenge.resource_metadata}`);
   state(2, "done");
   unlock(3, ["b3"]);
 });

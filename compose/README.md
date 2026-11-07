@@ -230,6 +230,29 @@ source is on your machine. And its rate limits apply: the sandbox limits token
 checks per calling address, so a burst of reads from your machine can answer
 `503 introspection_unavailable` for a while.
 
+## The browser page, beside the source
+
+The `page` profile adds the browser page for person-managed authorization
+([examples/person-managed-auth/README.md](../examples/person-managed-auth/README.md#the-same-loop-in-a-browser-page))
+to the source. The profile also starts `source`, so fill `compose/.env` with
+`SOURCE_CLIENT_ID` and `SOURCE_CLIENT_SECRET` first, as above. Then:
+
+```bash
+cd compose
+LIFECAREID_DEVACCESS_TOKEN=... docker compose --profile page up
+# page:   http://127.0.0.1:4000
+```
+
+Open `http://127.0.0.1:4000`, not `localhost`: the redirect address the page
+registers at the sandbox is the loopback one, and the backend refuses requests
+from any other origin. The page reads the source at
+`http://localhost:8799/sandbox-source`, the address your browser uses, which is
+also the resource the client is registered for. Inside Compose the backend
+reaches the same source at `http://source:8799/sandbox-source` (`SOURCE_FETCH`)
+and sends the browser's host as the `Host` header, because the source compares a
+token's audience with the address the caller used. Stop it with Ctrl-C or
+`docker compose down`; the backend deletes the sandbox client it registered.
+
 ## Without Docker
 
 ```bash

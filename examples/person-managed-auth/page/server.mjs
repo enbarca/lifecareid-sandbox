@@ -88,7 +88,7 @@ export function createPage(opts = {}) {
   const registerResource = new URL(source).origin !== HOSTED_SOURCE_ORIGIN;
 
   // Held in this process only.
-  const held = { client: null, person: null, token: null, tokenEndpoint: sandbox + "/token", origin: null, redirect: null };
+  const held = { client: null, person: null, token: null, tokenEndpoint: sandbox + "/token", authorizeEndpoint: sandbox + "/authorize", origin: null, redirect: null };
   let server;
 
   async function sandboxCall(method, path, { bearer, basic, cookie, body, form } = {}) {
@@ -121,6 +121,8 @@ export function createPage(opts = {}) {
     const meta = await sandboxCall("GET", "/.well-known/oauth-authorization-server").catch(() => null);
     const te = meta?.json?.token_endpoint;
     if (typeof te === "string" && new URL(te).origin === new URL(sandbox).origin) held.tokenEndpoint = te;
+    const ae = meta?.json?.authorization_endpoint;
+    if (typeof ae === "string" && new URL(ae).origin === new URL(sandbox).origin) held.authorizeEndpoint = ae;
   }
 
   async function cleanup() {
@@ -147,6 +149,7 @@ export function createPage(opts = {}) {
     let u;
     try { u = new URL(authorizeUrl); } catch (_) { throw new Refusal(400, "authorize_url is not a URL"); }
     if (u.origin !== new URL(sandbox).origin) throw new Refusal(400, "the yes is given only at the sandbox origin");
+    if (u.pathname !== new URL(held.authorizeEndpoint).pathname) throw new Refusal(400, "the yes is given only at the issuer's authorization endpoint");
     if (u.searchParams.get("client_id") !== held.client.id) throw new Refusal(400, "the authorize URL is not for this page's client");
     const cookie = `__Host-lc_id_session=${held.person.session}`;
     const page = await net(u, { headers: { cookie }, redirect: "manual" });
@@ -289,7 +292,8 @@ export function createPage(opts = {}) {
       // Only this page may drive the backend: a request from another origin is
       // refused, and a POST has to be JSON, which a form on another site cannot send.
       const origin = req.headers.origin;
-      if (origin && origin !== held.origin) return send(403, { error: "wrong_origin" });
+      // A POST with no Origin header is refused too: a browser always sends one.
+      if ((origin || req.method === "POST") && origin !== held.origin) return send(403, { error: "wrong_origin" });
       if (req.method === "POST" && !/^application\/json/.test(req.headers["content-type"] || "")) {
         return send(415, { error: "json_required" });
       }

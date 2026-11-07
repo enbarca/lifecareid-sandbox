@@ -33,7 +33,7 @@ function fakeSandbox() {
       return json(200, { client_id: "sbx_fakeclient", client_secret: CLIENT_SECRET });
     }
     if (route === "POST /v1/sandbox/test-identity") return json(200, { did: DID, session_token: SESSION });
-    if (route === "GET /.well-known/oauth-authorization-server") return json(200, { token_endpoint: seen.origin + "/token" });
+    if (route === "GET /.well-known/oauth-authorization-server") return json(200, { token_endpoint: seen.origin + "/token", authorization_endpoint: seen.origin + "/authorize" });
     if (route === "GET /authorize") {
       assert.equal(req.headers.cookie, "__Host-lc_id_session=" + SESSION);
       res.writeHead(200, { "content-type": "text/html" });
@@ -77,7 +77,7 @@ function fakeSandbox() {
 
 async function api(base, method, path, body, headers = {}) {
   const res = await fetch(base + path, {
-    method, headers: { ...(method === "POST" ? { "content-type": "application/json" } : {}), ...headers },
+    method, headers: { ...(method === "POST" ? { "content-type": "application/json", origin: base } : {}), ...headers },
     body: method === "POST" ? JSON.stringify(body || {}) : undefined,
   });
   return { status: res.status, body: await res.json().catch(() => null) };
@@ -136,6 +136,18 @@ test("the page backend walks yes, exchange, read, revoke and the refused read", 
     const after = await api(base, "POST", "/api/read");
     assert.equal(after.body.status, 401);
     assert.match(after.body.www_authenticate, /invalid_token/);
+
+    // a sandbox-origin URL for another client, or at another path, is refused
+    const other = new URL(authorize.href);
+    other.searchParams.set("client_id", "sbx_someone_else");
+    assert.equal((await api(base, "POST", "/api/yes", { authorize_url: other.href })).status, 400);
+    const wrongPath = new URL(authorize.href);
+    wrongPath.pathname = "/v1/panel/revoke";
+    assert.equal((await api(base, "POST", "/api/yes", { authorize_url: wrongPath.href })).status, 400, "pinned to the authorization endpoint path");
+
+    // a POST with no Origin header is refused
+    const noOrigin = await fetch(base + "/api/read", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+    assert.equal(noOrigin.status, 403);
 
     // only this page may drive the backend
     assert.equal((await api(base, "POST", "/api/read", {}, { origin: "https://evil.example" })).status, 403);
