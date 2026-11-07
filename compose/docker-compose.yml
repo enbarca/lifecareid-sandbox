@@ -27,3 +27,35 @@ services:
       LIFECAREID_SANDBOX_SOURCE_CLIENT_ID: ${SOURCE_CLIENT_ID:?register a client at the sandbox and put its id in compose/.env (see compose/README.md)}
       LIFECAREID_SANDBOX_SOURCE_CLIENT_SECRET: ${SOURCE_CLIENT_SECRET:?register a client at the sandbox and put its secret in compose/.env (see compose/README.md)}
     command: ["node", "compose/source/server.mjs"]
+
+  # The browser page for person-managed authorization (examples/person-managed-auth/page/),
+  # beside the source. Off unless asked for:
+  #
+  #   LIFECAREID_DEVACCESS_TOKEN=... docker compose --profile page up
+  #   page:     http://127.0.0.1:4000
+  #
+  # The page's backend registers its own sandbox client and a synthetic person
+  # at start with your developer access token, and deletes the client when it
+  # stops. The token and the client secret stay in that process.
+  page:
+    profiles: ["page"]
+    image: node:22-alpine
+    init: true
+    depends_on:
+      - source
+    ports:
+      - "127.0.0.1:4000:4000"
+    working_dir: /kit
+    volumes:
+      - ..:/kit:ro
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "4000"
+      LIFECAREID_DEVACCESS_TOKEN: ${LIFECAREID_DEVACCESS_TOKEN:-}
+      LIFECAREID_SANDBOX_ORIGIN: ${LIFECAREID_SANDBOX_ORIGIN:-https://sandbox.lifecare.id}
+      # The address the browser uses for the source, and the one the backend uses
+      # from inside Compose. The source compares a token's audience with the
+      # first, so the backend sends it as the Host header.
+      SOURCE: http://localhost:8799/sandbox-source
+      SOURCE_FETCH: http://source:8799/sandbox-source
+    command: ["node", "examples/person-managed-auth/page/server.mjs"]
