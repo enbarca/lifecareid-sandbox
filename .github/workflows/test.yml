@@ -23,6 +23,6 @@ jobs:
           node --check compose/source/server.mjs
           node --check examples/run-loop.mjs
           node --check scripts/sync-upstream.mjs
-          for f in lib/person-managed-auth/src/*.js examples/person-managed-auth/*.mjs; do node --check "$f"; done
+          for f in lib/person-managed-auth/src/*.js examples/person-managed-auth/*.mjs examples/person-managed-auth/page/*.mjs examples/person-managed-auth/page/*.js; do node --check "$f"; done
       - name: Tests
         run: node --test

@@ -87,6 +87,15 @@ deletes the clients it registered. A synthetic person's session stands in for
 the passkey tap; [examples/person-managed-auth/README.md](examples/person-managed-auth/README.md)
 says exactly where.
 
+### The same loop in a browser page
+
+`examples/person-managed-auth/page/` is the flow as a page you open, the way
+your own web app would run it: discovery, the challenge, the person's yes, the
+code exchange through a small backend that holds the client secret, then a read
+with the receipt and the revoke. `LIFECAREID_DEVACCESS_TOKEN=... npm run page`
+and open `http://127.0.0.1:4000`; the walk is in
+[examples/person-managed-auth/README.md](examples/person-managed-auth/README.md#the-same-loop-in-a-browser-page).
+
 ### The source on your machine
 
 The same loop, with the two source reads going to a source you run. It checks
